@@ -106,8 +106,8 @@ const fadeUp = {
 
 const transition = {
   duration: 0.9,
-  ease: [0.22, 1, 0.36, 1],
-};
+  ease: "easeOut",
+} as const;
 
 const viewport = { once: true, amount: 0.2 };
 
