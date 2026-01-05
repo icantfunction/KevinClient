@@ -111,6 +111,29 @@ const transition = {
 
 const viewport = { once: true, amount: 0.2 };
 
+const HeroCopy = () => (
+  <>
+    <p className="eyebrow">Palm Beach + Worldwide</p>
+    <h1 className="hero-title" id="hero-title">
+      World Wide Events
+    </h1>
+    <p className="hero-tagline">Editorial wedding photography</p>
+    <p className="hero-description">
+      World Wide Events crafts minimalist editorial photography for weddings and
+      celebrations worldwide, blending calm direction with cinematic framing
+      and galleries that read like print.
+    </p>
+    <div className="hero-actions">
+      <a className="button button-primary" href="#work">
+        See our work
+      </a>
+      <a className="text-link" href="#contact">
+        Start the conversation
+      </a>
+    </div>
+  </>
+);
+
 export default function Home() {
   return (
     <MotionConfig reducedMotion="user">
@@ -160,24 +183,19 @@ export default function Home() {
               variants={fadeUp}
               transition={transition}
             >
-              <p className="eyebrow">Palm Beach + Worldwide</p>
-            <h1 className="hero-title" id="hero-title">
-              World Wide Events
-            </h1>
-            <p className="hero-tagline">Editorial wedding photography</p>
-            <p className="hero-description">
-              World Wide Events crafts minimalist editorial photography for
-              weddings and celebrations worldwide, blending calm direction with
-              cinematic framing and galleries that read like print.
-            </p>
-              <div className="hero-actions">
-                <a className="button button-primary" href="#work">
-                  See our work
-                </a>
-                <a className="text-link" href="#contact">
-                  Start the conversation
-                </a>
-              </div>
+              <HeroCopy />
+            </motion.div>
+          </section>
+          <section className="hero-banner" aria-labelledby="hero-title">
+            <motion.div
+              className="hero-banner-inner"
+              initial="hidden"
+              whileInView="visible"
+              viewport={viewport}
+              variants={fadeUp}
+              transition={transition}
+            >
+              <HeroCopy />
             </motion.div>
           </section>
 
