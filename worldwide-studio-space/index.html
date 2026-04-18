@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worldwide Studio Space | Vision</title>
+    <!-- Fonts: Cormorant Garamond (Serif) & Inter (Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">STUDIO SPACE</div>
+            <button class="btn-ghost desktop-only" onclick="openBooking()">BOOK SPACE</button>
+        </header>
+
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Space.<br>Light.<br>Form.</h1>
+                <p>Where vision takes form.</p>
+                <button class="btn-ghost" onclick="openBooking()">RESERVE</button>
+            </div>
+            <div class="hero-image-wrapper">
+                <!-- BW / High Grain Image -->
+                <img src="https://images.unsplash.com/photo-1493863641943-9b68992a8d07?q=80&w=2058&auto=format&fit=crop" alt="Studio Light and Shadow" class="hero-img">
+            </div>
+        </section>
+    </div>
+
+    <!-- Social Proof (Minimalist) -->
+    <section class="social-proof">
+        <span class="label">FEATURED IN</span>
+        <div class="brand-list">
+            <span>VOGUE</span>
+            <span>HYPEBEAST</span>
+            <span>KINFOLK</span>
+            <span>GQ</span>
+        </div>
+    </section>
+
+    <!-- Details (Vertical List) -->
+    <div class="container">
+        <section class="details-section">
+            <div class="detail-group">
+                <h2 class="serif-title">The Canvas</h2>
+                <div class="spec-list">
+                    <div class="spec-item">
+                        <span class="spec-label">Area</span>
+                        <span class="spec-value">1500 SQ FT</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">Ceiling</span>
+                        <span class="spec-value">14 FT Open Air</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">Light</span>
+                        <span class="spec-value">South Facing Natural</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-group">
+                <h2 class="serif-title">The Tools</h2>
+                <div class="spec-list">
+                    <div class="spec-item">3x C-Stands (Matthews)</div>
+                    <div class="spec-item">2x Godox SL-60W</div>
+                    <div class="spec-item">V-Flats (Black/White)</div>
+                    <div class="spec-item">Savage Universal Backdrops</div>
+                    <div class="spec-item">Mid-Century Lounge Set</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer / Sticky Book -->
+    <div class="sticky-book-bar">
+        <div class="price-tag">
+            Reserve from $75/hr
+        </div>
+        <button class="btn-ghost small" onclick="openBooking()">BOOK</button>
+    </div>
+
+    <!-- Booking Overlay -->
+    <div class="booking-overlay" id="bookingModal">
+        <div class="booking-modal">
+            <div class="close-modal" onclick="closeBooking()">&times;</div>
+            <h2 class="modal-title">Secure Your Time</h2>
+            <div class="calendar-placeholder">
+                <p>Scheduler Loading...</p>
+            </div>
+            <button class="btn-ghost full-width" onclick="closeBooking()">CONFIRM REQUEST</button>
+        </div>
+    </div>
+
+    <script>
+        function openBooking() {
+            document.getElementById('bookingModal').style.display = 'flex';
+        }
+
+        function closeBooking() {
+            document.getElementById('bookingModal').style.display = 'none';
+        }
+        
+        document.getElementById('bookingModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeBooking();
+            }
+        });
+    </script>
+
+</body>
+</html>
