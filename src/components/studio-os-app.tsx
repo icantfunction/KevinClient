@@ -66,7 +66,7 @@ const relative = (value?: string | null) => {
 const shortDate = (value?: string | null) => {
   if (!value) return "—";
   const d = new Date(value);
-  return `${weekdayFormatter.format(d)} ${dayFormatter.format(d)} · ${timeFormatter.format(d)}`;
+  return `${dayFormatter.format(d)} · ${timeFormatter.format(d)}`;
 };
 
 const duration = (minutes?: number) => {
@@ -86,6 +86,15 @@ const asArray = (value: unknown): LooseRecord[] =>
 const asRecord = (value: unknown): LooseRecord =>
   (value && typeof value === "object" ? value : {}) as LooseRecord;
 
+const initialsOf = (name?: string) =>
+  String(name ?? "?")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((piece) => piece[0])
+    .join("")
+    .toUpperCase() || "?";
+
 type ChipTone =
   | "emerald"
   | "amber"
@@ -96,13 +105,13 @@ type ChipTone =
   | "indigo";
 
 const chipStyles: Record<ChipTone, string> = {
-  emerald: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  amber: "bg-amber-50 text-amber-700 ring-amber-200",
-  rose: "bg-rose-50 text-rose-700 ring-rose-200",
-  violet: "bg-violet-50 text-violet-700 ring-violet-200",
-  sky: "bg-sky-50 text-sky-700 ring-sky-200",
-  slate: "bg-slate-100 text-slate-700 ring-slate-200",
-  indigo: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+  emerald: "bg-emerald-100 text-emerald-800",
+  amber: "bg-amber-100 text-amber-800",
+  rose: "bg-rose-100 text-rose-800",
+  violet: "bg-violet-100 text-violet-800",
+  sky: "bg-sky-100 text-sky-800",
+  slate: "bg-slate-100 text-slate-700",
+  indigo: "bg-indigo-100 text-indigo-800",
 };
 
 function Chip({
@@ -116,7 +125,7 @@ function Chip({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ring-1 ring-inset ${chipStyles[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[0.72rem] font-medium ${chipStyles[tone]} ${className}`}
     >
       {children}
     </span>
@@ -177,57 +186,56 @@ type IconProps = { className?: string };
 
 const Icon = {
   Home: ({ className = "h-4 w-4" }: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z" />
     </svg>
   ),
   Pipeline: ({ className = "h-4 w-4" }: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M4 6h6M4 12h10M4 18h6" />
-      <circle cx="18" cy="6" r="2" />
-      <circle cx="18" cy="18" r="2" />
-      <circle cx="14" cy="12" r="2" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="3" y="4" width="5" height="16" rx="1.5" />
+      <rect x="10" y="4" width="5" height="10" rx="1.5" />
+      <rect x="17" y="4" width="4" height="6" rx="1.5" />
     </svg>
   ),
   Camera: ({ className = "h-4 w-4" }: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M4 8h3l2-2h6l2 2h3v11H4z" />
       <circle cx="12" cy="13" r="3.5" />
     </svg>
   ),
   Studio: ({ className = "h-4 w-4" }: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M3 10h18M3 10v10h18V10M3 10l9-6 9 6" />
     </svg>
   ),
   Wallet: ({ className = "h-4 w-4" }: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M3 7h15a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <path d="M3 7V5a2 2 0 0 1 2-2h11v4" />
-      <circle cx="16" cy="13" r="1.5" />
+      <circle cx="16" cy="13" r="1.25" />
     </svg>
   ),
   Tasks: ({ className = "h-4 w-4" }: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <rect x="4" y="4" width="16" height="16" rx="3" />
       <path d="m8 12 3 3 5-6" />
     </svg>
   ),
   Inbox: ({ className = "h-4 w-4" }: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5" />
       <path d="M4 13 6 5h12l2 8" />
       <path d="M4 13h4l1 2h6l1-2h4" />
     </svg>
   ),
   Search: ({ className = "h-4 w-4" }: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.5-3.5" />
     </svg>
   ),
   Plus: ({ className = "h-4 w-4" }: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M12 5v14M5 12h14" />
     </svg>
   ),
@@ -242,7 +250,7 @@ const Icon = {
     </svg>
   ),
   Bell: ({ className = "h-4 w-4" }: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
       <path d="M10 21a2 2 0 0 0 4 0" />
     </svg>
@@ -252,9 +260,9 @@ const Icon = {
       <path d="M7 17 17 7M9 7h8v8" />
     </svg>
   ),
-  Sparkle: ({ className = "h-4 w-4" }: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M12 3 14 10 21 12 14 14 12 21 10 14 3 12 10 10z" />
+  ChevronRight: ({ className = "h-4 w-4" }: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m9 6 6 6-6 6" />
     </svg>
   ),
 };
@@ -264,7 +272,7 @@ const navItems: ReadonlyArray<{
   readonly label: string;
   readonly icon: ComponentType<IconProps>;
 }> = [
-  { key: "overview", label: "Home", icon: Icon.Home },
+  { key: "overview", label: "Overview", icon: Icon.Home },
   { key: "pipeline", label: "Pipeline", icon: Icon.Pipeline },
   { key: "sessions", label: "Sessions", icon: Icon.Camera },
   { key: "studio", label: "Studio", icon: Icon.Studio },
@@ -295,190 +303,125 @@ function LoginPanel() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-12 px-6 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:px-10">
-        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 p-10 text-slate-100 shadow-[0_40px_120px_-30px_rgba(15,23,42,0.45)]">
-          <div className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-indigo-500/20 blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-sky-500/15 blur-3xl" />
-          <div className="relative flex h-full flex-col">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
-                <Icon.Sparkle className="h-4 w-4 text-amber-200" />
-              </div>
-              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-slate-300">
-                Studio OS · Beta
-              </span>
-            </div>
-            <h1 className="mt-14 max-w-xl font-serif text-5xl leading-[1.02] tracking-tight lg:text-6xl">
-              One backend.
-              <br />
-              <span className="text-indigo-200">Every operator surface.</span>
-            </h1>
-            <p className="mt-6 max-w-md text-[0.95rem] leading-relaxed text-slate-300">
-              Inquiries, sessions, smart files, galleries, studio bookings,
-              invoices, expenses, automations, and field-ready mobile — all on
-              the same AWS stack.
-            </p>
-            <div className="mt-12 grid grid-cols-2 gap-3 text-sm text-slate-200 sm:grid-cols-3">
-              {[
-                "Cognito OTP",
-                "Aurora v2",
-                "EventBridge",
-                "Stripe",
-                "SES · SNS",
-                "Fargate",
-              ].map((label) => (
-                <div
-                  key={label}
-                  className="rounded-xl bg-white/5 px-3 py-2 text-[0.78rem] font-medium ring-1 ring-white/10 backdrop-blur"
-                >
-                  {label}
-                </div>
-              ))}
-            </div>
-            <div className="mt-auto pt-12 text-xs text-slate-400">
-              API: {studioOsRuntimeConfig.apiUrl}
-            </div>
+    <main className="min-h-screen bg-white text-slate-900">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-14">
+        <div className="mb-10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
+            <span className="font-serif text-lg leading-none">K</span>
           </div>
-        </section>
-
-        <section className="rounded-[2rem] bg-white p-8 shadow-[0_30px_90px_-40px_rgba(15,23,42,0.25)] ring-1 ring-slate-200/70">
-          <div className="flex items-center justify-between">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-500">
-              Sign in
-            </p>
-            <Chip tone="emerald">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              API live
-            </Chip>
-          </div>
-          <h2 className="mt-3 font-serif text-3xl text-slate-900">
-            Kevin-only phone OTP
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Custom Cognito challenge. Temporary override for{" "}
-            <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.78rem] text-slate-700">
-              +1 954 854 1484
-            </code>{" "}
-            accepts <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.78rem] text-slate-700">999999</code> while SNS is sandboxed.
+          <h1 className="mt-6 font-serif text-[2.4rem] leading-[1.05] tracking-tight text-slate-900">
+            Studio OS
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Kevin Ramos · photography &amp; creator studio
           </p>
+        </div>
 
-          {status !== "challenge" ? (
-            <form
-              className="mt-8 space-y-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void requestCode(phoneNumber);
-              }}
-            >
-              <label className="block">
-                <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Phone number
-                </span>
-                <input
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[0.95rem] outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-                  value={phoneNumber}
-                  onChange={(event) => setPhoneNumber(event.target.value)}
-                  inputMode="tel"
-                  autoComplete="tel"
-                />
-              </label>
-              <button
-                type="submit"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
-                disabled={isWorking}
-              >
-                {isWorking ? "Sending code…" : "Send one-time code"}
-                <Icon.ArrowUpRight />
-              </button>
-            </form>
-          ) : (
-            <form
-              className="mt-8 space-y-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void verifyCode(otpCode);
-              }}
-            >
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                Code sent to{" "}
-                <span className="font-semibold text-slate-900">
-                  {challengePhoneNumber}
-                </span>
-                . Enter the 6-digit code.
-              </div>
-              <input
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-center font-mono text-2xl tracking-[0.42em] outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-                value={otpCode}
-                onChange={(event) => setOtpCode(event.target.value)}
-                inputMode="numeric"
-                maxLength={6}
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
-                disabled={isWorking}
-              >
-                {isWorking ? "Verifying…" : "Enter dashboard"}
-                <Icon.ArrowUpRight />
-              </button>
-            </form>
-          )}
-
-          {errorMessage ? (
-            <p className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {errorMessage}
-            </p>
-          ) : null}
-
-          <div className="mt-8 flex items-center gap-3 text-xs text-slate-400">
-            <span className="h-px flex-1 bg-slate-200" />
-            or
-            <span className="h-px flex-1 bg-slate-200" />
-          </div>
-
-          <button
-            type="button"
-            onClick={enterDemo}
-            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
+        {status !== "challenge" ? (
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void requestCode(phoneNumber);
+            }}
           >
-            <Icon.Sparkle className="h-4 w-4 text-amber-500" />
-            Launch demo workspace
-          </button>
-          <p className="mt-3 text-center text-[0.72rem] text-slate-400">
-            Demo mode renders seeded data — no AWS calls are made.
+            <label className="block">
+              <span className="text-xs font-medium text-slate-600">
+                Phone number
+              </span>
+              <input
+                className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-[0.95rem] outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                value={phoneNumber}
+                onChange={(event) => setPhoneNumber(event.target.value)}
+                inputMode="tel"
+                autoComplete="tel"
+              />
+            </label>
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
+              disabled={isWorking}
+            >
+              {isWorking ? "Sending…" : "Continue"}
+            </button>
+          </form>
+        ) : (
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void verifyCode(otpCode);
+            }}
+          >
+            <p className="text-sm text-slate-600">
+              Code sent to{" "}
+              <span className="font-medium text-slate-900">
+                {challengePhoneNumber}
+              </span>
+              .
+            </p>
+            <input
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-center font-mono text-xl tracking-[0.36em] outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+              value={otpCode}
+              onChange={(event) => setOtpCode(event.target.value)}
+              inputMode="numeric"
+              maxLength={6}
+              autoFocus
+            />
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
+              disabled={isWorking}
+            >
+              {isWorking ? "Verifying…" : "Sign in"}
+            </button>
+          </form>
+        )}
+
+        {errorMessage ? (
+          <p className="mt-4 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            {errorMessage}
           </p>
-        </section>
+        ) : null}
+
+        <div className="mt-8 flex items-center gap-3 text-xs text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" />
+          or
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
+
+        <button
+          type="button"
+          onClick={enterDemo}
+          className="mt-5 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 transition hover:border-slate-400 hover:bg-slate-50"
+        >
+          View a demo workspace
+        </button>
+
+        <p className="mt-10 text-[0.72rem] text-slate-400">
+          Temporary OTP <code className="font-mono">999999</code> works for the
+          allowlisted number while SNS is sandboxed.
+        </p>
       </div>
     </main>
   );
 }
 
-function SectionHeader({
-  eyebrow,
+function SectionTitle({
   title,
-  description,
+  meta,
   action,
 }: {
-  readonly eyebrow: string;
   readonly title: string;
-  readonly description?: string;
+  readonly meta?: string;
   readonly action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex items-end justify-between gap-3">
       <div>
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-500">
-          {eyebrow}
-        </p>
-        <h2 className="mt-1 font-serif text-[1.8rem] leading-tight text-slate-900">
-          {title}
-        </h2>
-        {description ? (
-          <p className="mt-1 max-w-2xl text-sm text-slate-500">
-            {description}
-          </p>
+        <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+        {meta ? (
+          <p className="mt-0.5 text-sm text-slate-500">{meta}</p>
         ) : null}
       </div>
       {action ? <div className="flex items-center gap-2">{action}</div> : null}
@@ -497,7 +440,7 @@ function Card({
 }) {
   return (
     <section
-      className={`rounded-2xl bg-white ring-1 ring-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-18px_rgba(15,23,42,0.3)] ${padding} ${className}`}
+      className={`rounded-xl border border-slate-200 bg-white ${padding} ${className}`}
     >
       {children}
     </section>
@@ -508,44 +451,19 @@ function StatCard({
   label,
   value,
   sublabel,
-  tone = "slate",
-  delta,
 }: {
   readonly label: string;
   readonly value: string | number;
   readonly sublabel?: string;
-  readonly tone?: ChipTone;
-  readonly delta?: string;
 }) {
-  const toneBar: Record<ChipTone, string> = {
-    emerald: "from-emerald-400 to-emerald-600",
-    amber: "from-amber-400 to-amber-600",
-    rose: "from-rose-400 to-rose-600",
-    violet: "from-violet-400 to-violet-600",
-    sky: "from-sky-400 to-sky-600",
-    slate: "from-slate-400 to-slate-600",
-    indigo: "from-indigo-400 to-indigo-600",
-  };
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-18px_rgba(15,23,42,0.3)]">
-      <div
-        className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${toneBar[tone]}`}
-      />
-      <div className="flex items-start justify-between">
-        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
-          {label}
-        </p>
-        {delta ? (
-          <Chip tone={tone} className="!text-[0.62rem]">
-            {delta}
-          </Chip>
-        ) : null}
-      </div>
-      <p className="mt-3 font-serif text-[2.3rem] leading-none text-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-2 text-[1.75rem] font-semibold leading-none text-slate-900">
         {value}
       </p>
       {sublabel ? (
-        <p className="mt-2 text-xs text-slate-500">{sublabel}</p>
+        <p className="mt-1.5 text-[0.78rem] text-slate-500">{sublabel}</p>
       ) : null}
     </div>
   );
@@ -553,7 +471,7 @@ function StatCard({
 
 function EmptyRow({ children }: { readonly children: ReactNode }) {
   return (
-    <div className="rounded-xl bg-slate-50 px-3 py-6 text-center text-sm text-slate-400">
+    <div className="rounded-md bg-slate-50 px-3 py-5 text-center text-sm text-slate-400">
       {children}
     </div>
   );
@@ -587,49 +505,49 @@ function PipelineBoard({ inquiries }: { readonly inquiries: LooseRecord[] }) {
         return (
           <div
             key={col.key}
-            className="rounded-2xl bg-slate-50/70 p-3 ring-1 ring-slate-200/70"
+            className="rounded-xl border border-slate-200 bg-slate-50/60 p-3"
           >
-            <div className="flex items-center justify-between px-1 pb-2">
+            <div className="flex items-center justify-between px-1 pb-2.5">
               <div className="flex items-center gap-2">
-                <Chip tone={col.tone}>{col.title}</Chip>
-                <span className="text-xs font-medium text-slate-500">
-                  {rows.length}
+                <span className={`h-1.5 w-1.5 rounded-full ${col.tone === "violet" ? "bg-violet-500" : col.tone === "sky" ? "bg-sky-500" : col.tone === "amber" ? "bg-amber-500" : "bg-emerald-500"}`} />
+                <span className="text-sm font-medium text-slate-700">
+                  {col.title}
                 </span>
+                <span className="text-xs text-slate-400">{rows.length}</span>
               </div>
               <button
-                className="text-slate-400 transition hover:text-slate-700"
                 type="button"
-                aria-label="Add inquiry"
+                aria-label={`Add to ${col.title}`}
+                className="rounded p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
               >
                 <Icon.Plus className="h-3.5 w-3.5" />
               </button>
             </div>
             <div className="space-y-2">
               {rows.length === 0 ? (
-                <EmptyRow>No items</EmptyRow>
+                <div className="rounded-md border border-dashed border-slate-200 bg-white/60 py-4 text-center text-xs text-slate-400">
+                  —
+                </div>
               ) : (
                 rows.map((item) => (
                   <div
                     key={String(item.id)}
-                    className="group rounded-xl bg-white p-3 ring-1 ring-slate-200/80 transition hover:-translate-y-0.5 hover:shadow-md"
+                    className="group cursor-pointer rounded-lg border border-slate-200 bg-white p-3 transition hover:border-slate-300"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-slate-900">
+                      <p className="text-sm font-medium text-slate-900">
                         {String(item.inquirerName ?? "Unknown")}
                       </p>
-                      <Chip tone={statusChipTone(item.eventType as string)}>
+                      <Chip tone="slate">
                         {formatStatusLabel(item.eventType as string)}
                       </Chip>
                     </div>
-                    <p className="mt-1.5 line-clamp-2 text-xs text-slate-500">
-                      {String(item.message ?? "No message")}
+                    <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-500">
+                      {String(item.message ?? "")}
                     </p>
-                    <div className="mt-3 flex items-center justify-between text-[0.7rem] text-slate-400">
-                      <span>{relative(item.receivedAt as string)}</span>
-                      <span className="opacity-0 transition group-hover:opacity-100">
-                        <Icon.ArrowUpRight />
-                      </span>
-                    </div>
+                    <p className="mt-2 text-[0.7rem] text-slate-400">
+                      {relative(item.receivedAt as string)}
+                    </p>
                   </div>
                 ))
               )}
@@ -877,26 +795,30 @@ export default function StudioOsApp() {
       {
         label: "New inquiries",
         value: String(newInquiries),
-        sublabel: "last 7 days",
-        tone: "violet" as ChipTone,
+        sublabel: "awaiting response",
       },
       {
-        label: "Active sessions",
+        label: "Upcoming sessions",
         value: String(activeSessions),
-        sublabel: "confirmed and tentative",
-        tone: "sky" as ChipTone,
+        sublabel: "next 14 days",
       },
       {
         label: "Open tasks",
         value: String(openTasks),
-        sublabel: "across every project",
-        tone: "amber" as ChipTone,
+        sublabel: asArray(dashboard?.tasks).filter(
+          (t) => (t.priority as string) === "high",
+        ).length
+          ? `${asArray(dashboard?.tasks).filter((t) => (t.priority as string) === "high").length} high priority`
+          : undefined,
       },
       {
-        label: "Outstanding A/R",
+        label: "Outstanding",
         value: money(outstandingCents),
-        sublabel: "across all invoices",
-        tone: "emerald" as ChipTone,
+        sublabel: `${
+          asArray(dashboard?.invoices).filter(
+            (inv) => Number(inv.balanceCents ?? 0) > 0,
+          ).length
+        } open invoices`,
       },
     ];
   }, [dashboard]);
@@ -910,74 +832,92 @@ export default function StudioOsApp() {
   const topProvider = asRecord(dashboard?.paymentProvider);
   const providerAvailable = Boolean(topProvider.available);
 
+  const overdueInvoices = asArray(dashboard?.invoices).filter(
+    (inv) => (inv.status as string) === "overdue",
+  ).length;
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-slate-200 bg-white transition-transform lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="flex h-16 items-center gap-2.5 border-b border-slate-200 px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
-            <Icon.Sparkle className="h-4 w-4 text-amber-300" />
+        <div className="flex h-14 items-center gap-2.5 px-5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-900 text-white">
+            <span className="font-serif text-sm leading-none">K</span>
           </div>
-          <div>
-            <p className="font-serif text-base leading-tight text-slate-900">
-              Studio OS
-            </p>
-            <p className="text-[0.62rem] font-medium uppercase tracking-[0.22em] text-slate-400">
-              Kevin Ramos
-            </p>
-          </div>
+          <span className="text-[0.95rem] font-semibold tracking-tight text-slate-900">
+            Studio OS
+          </span>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          {navItems.map((item) => {
-            const NavIcon = item.icon;
-            const isActive = activeNav === item.key;
-            return (
-              <a
-                key={item.key}
-                href={`#${item.key}`}
-                onClick={() => {
-                  setActiveNav(item.key);
-                  setSidebarOpen(false);
-                }}
-                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${isActive ? "bg-slate-900 text-white shadow-[0_6px_20px_-8px_rgba(15,23,42,0.4)]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+        <nav className="flex-1 overflow-y-auto px-3 pb-4">
+          <div className="px-2 pb-1.5 pt-2 text-[0.68rem] font-medium uppercase tracking-wider text-slate-400">
+            Workspace
+          </div>
+          <ul className="space-y-0.5">
+            {navItems.map((item) => {
+              const NavIcon = item.icon;
+              const isActive = activeNav === item.key;
+              return (
+                <li key={item.key}>
+                  <a
+                    href={`#${item.key}`}
+                    onClick={() => {
+                      setActiveNav(item.key);
+                      setSidebarOpen(false);
+                    }}
+                    className={`flex items-center gap-3 rounded-md px-2.5 py-1.5 text-sm transition ${
+                      isActive
+                        ? "bg-slate-100 font-medium text-slate-900"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <NavIcon
+                      className={`h-4 w-4 ${isActive ? "text-slate-900" : "text-slate-400"}`}
+                    />
+                    <span>{item.label}</span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="mt-6 px-2 pb-1.5 text-[0.68rem] font-medium uppercase tracking-wider text-slate-400">
+            Links
+          </div>
+          <ul className="space-y-0.5">
+            <li>
+              <Link
+                href="/studio"
+                className="flex items-center justify-between rounded-md px-2.5 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
               >
-                <NavIcon
-                  className={`h-4 w-4 ${isActive ? "text-white" : "text-slate-400 group-hover:text-slate-700"}`}
-                />
-                <span>{item.label}</span>
+                <span>Studio page</span>
+                <Icon.ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+              </Link>
+            </li>
+            <li>
+              <a
+                href={`${studioOsRuntimeConfig.apiUrl}/studio/page`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between rounded-md px-2.5 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+              >
+                <span>Public studio</span>
+                <Icon.ArrowUpRight className="h-3.5 w-3.5 text-slate-400" />
               </a>
-            );
-          })}
+            </li>
+          </ul>
         </nav>
 
-        <div className="m-3 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-50 p-4 ring-1 ring-indigo-100">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-indigo-700">
-            Field-ready PWA
-          </p>
-          <p className="mt-2 text-xs leading-5 text-slate-600">
-            Install on mobile for shot lists and check-in. Offline-capable
-            service worker is active.
-          </p>
-          <Link
-            href="/studio"
-            className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900"
-          >
-            Studio story
-            <Icon.ArrowUpRight />
-          </Link>
-        </div>
-
-        <div className="border-t border-slate-200 p-3">
-          <div className="flex items-center gap-2.5 rounded-xl px-2 py-2">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 text-xs font-semibold text-white">
+        <div className="border-t border-slate-200 p-2.5">
+          <div className="flex items-center gap-2.5 rounded-md px-2 py-2">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 text-[0.72rem] font-semibold text-slate-700">
               {isDemo ? "DM" : "KR"}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900">
-                {isDemo ? "Demo mode" : "Kevin Ramos"}
+              <p className="truncate text-sm font-medium text-slate-900">
+                {isDemo ? "Demo workspace" : "Kevin Ramos"}
               </p>
               <p className="truncate text-[0.7rem] text-slate-500">
                 {session.phoneNumber}
@@ -986,9 +926,14 @@ export default function StudioOsApp() {
             <button
               type="button"
               onClick={logout}
-              className="flex-shrink-0 rounded-lg border border-slate-200 px-2 py-1 text-[0.64rem] font-semibold uppercase tracking-[0.08em] text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
+              className="flex-shrink-0 rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              aria-label="Sign out"
+              title="Sign out"
             >
-              {isDemo ? "Exit" : "Out"}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <path d="M15 12H3m0 0 4-4m-4 4 4 4" />
+                <path d="M9 5V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-1" />
+              </svg>
             </button>
           </div>
         </div>
@@ -996,39 +941,38 @@ export default function StudioOsApp() {
 
       {sidebarOpen ? (
         <div
-          className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-30 bg-slate-900/30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       ) : null}
 
-      {/* Main column */}
-      <div className="lg:pl-64">
-        {/* Top bar */}
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
-          <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+      {/* Main */}
+      <div className="lg:pl-60">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur">
+          <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">
             <button
               type="button"
               onClick={() => setSidebarOpen((open) => !open)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 lg:hidden"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 lg:hidden"
               aria-label="Toggle navigation"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="h-5 w-5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className="h-5 w-5">
                 <path d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
 
-            <div className="relative flex-1 max-w-xl">
-              <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
-                <Icon.Search />
+            <div className="relative w-full max-w-md">
+              <div className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-slate-400">
+                <Icon.Search className="h-4 w-4" />
               </div>
               <input
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-                placeholder="Search clients, sessions, invoices, tasks…"
+                className="w-full rounded-md border border-slate-200 bg-slate-50 py-1.5 pl-9 pr-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-900/5"
+                placeholder="Search clients, sessions, invoices…"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
               />
               {searchResults.length > 0 ? (
-                <div className="absolute left-0 right-0 z-30 mt-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
                   {searchResults.map((result) => (
                     <a
                       key={`${result.entityType}:${result.entityId}`}
@@ -1039,99 +983,94 @@ export default function StudioOsApp() {
                             ? `/studio-booking/${result.entityId}/check-in`
                             : "#pipeline"
                       }
-                      className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition hover:bg-slate-50"
+                      className="flex items-center justify-between gap-3 px-3 py-2 transition hover:bg-slate-50"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-900">
+                        <p className="truncate text-sm font-medium text-slate-900">
                           {String(result.title)}
                         </p>
                         <p className="truncate text-xs text-slate-500">
-                          {String(result.subtitle || "No preview")}
+                          {String(result.subtitle || "")}
                         </p>
                       </div>
-                      <Chip tone="slate">
+                      <span className="text-xs text-slate-400">
                         {formatStatusLabel(result.entityType as string)}
-                      </Chip>
+                      </span>
                     </a>
                   ))}
                 </div>
               ) : null}
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-1.5">
               {activeEntry.id ? (
                 <button
                   type="button"
                   onClick={() => void stopTimer()}
-                  className="inline-flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-200 transition hover:bg-rose-100"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-100"
+                  title="Stop timer"
                 >
-                  <Icon.Stop className="h-3 w-3" />
-                  <span>{duration(activeMinutes)}</span>
-                  <span className="hidden sm:inline">
-                    · {String(activeEntry.title)}
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-500" />
+                  </span>
+                  <span className="font-mono">{duration(activeMinutes)}</span>
+                  <span className="hidden max-w-[160px] truncate sm:inline">
+                    {String(activeEntry.title)}
                   </span>
                 </button>
-              ) : (
-                <div className="hidden items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-500 sm:inline-flex">
-                  <Icon.Play className="h-3 w-3 text-slate-400" />
-                  <span>Timer idle</span>
-                </div>
-              )}
+              ) : null}
 
               <button
                 type="button"
-                className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:text-slate-900"
+                className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
                 aria-label="Notifications"
               >
                 <Icon.Bell />
-                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500 ring-2 ring-white" />
+                {overdueInvoices > 0 ? (
+                  <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500" />
+                ) : null}
               </button>
 
               {isDemo ? (
-                <Chip tone="amber" className="hidden sm:inline-flex">
-                  <Icon.Sparkle className="h-3 w-3" />
-                  Demo mode
-                </Chip>
+                <span className="hidden items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[0.68rem] font-medium text-amber-800 sm:inline-flex">
+                  Demo data
+                </span>
               ) : null}
             </div>
           </div>
         </header>
 
         <div className="space-y-8 px-4 py-6 sm:px-6 lg:px-8">
-          {/* Greeting + KPIs */}
-          <section id="overview" className="scroll-mt-24 space-y-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          {/* Overview */}
+          <section id="overview" className="scroll-mt-20 space-y-5">
+            <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <p className="text-xs text-slate-500">
                   {new Date().toLocaleDateString("en-US", {
                     weekday: "long",
                     month: "long",
                     day: "numeric",
                   })}
                 </p>
-                <h1 className="mt-1 font-serif text-[2.2rem] leading-tight text-slate-900 sm:text-[2.6rem]">
-                  Good to see you, Kevin.
+                <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-slate-900">
+                  Overview
                 </h1>
-                <p className="mt-1 text-sm text-slate-500">
-                  {upcomingSessions.length} sessions and{" "}
-                  {asArray(dashboard?.bookings).length} studio bookings over the
-                  next 14 days.
-                </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                 >
-                  <Icon.Plus className="h-3.5 w-3.5" />
-                  New inquiry
+                  <Icon.Plus className="h-3 w-3" />
+                  Inquiry
                 </button>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800"
                 >
-                  <Icon.Plus className="h-3.5 w-3.5" />
-                  New session
+                  <Icon.Plus className="h-3 w-3" />
+                  Session
                 </button>
               </div>
             </div>
@@ -1143,134 +1082,118 @@ export default function StudioOsApp() {
                   label={kpi.label}
                   value={kpi.value}
                   sublabel={kpi.sublabel}
-                  tone={kpi.tone}
                 />
               ))}
             </div>
 
             <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-              <Card>
-                <SectionHeader
-                  eyebrow="Next up"
-                  title="Upcoming work"
-                  description="Sessions and studio bookings in the coming two weeks."
-                />
-                <div className="mt-5 space-y-2">
+              <Card padding="p-0">
+                <div className="flex items-center justify-between px-5 py-3.5">
+                  <SectionTitle title="Coming up" />
+                  <a
+                    href="#sessions"
+                    className="text-xs font-medium text-slate-500 hover:text-slate-900"
+                  >
+                    All sessions →
+                  </a>
+                </div>
+                <div className="divide-y divide-slate-100 border-t border-slate-100">
                   {upcomingSessions.length === 0 ? (
-                    <EmptyRow>No upcoming sessions scheduled.</EmptyRow>
+                    <div className="px-5 py-6 text-sm text-slate-400">
+                      Nothing scheduled in the next two weeks.
+                    </div>
                   ) : (
-                    upcomingSessions
-                      .slice(0, 5)
-                      .map((item: LooseRecord) => {
-                        const start = item.scheduledStart ?? item.scheduled_start;
-                        return (
-                          <div
-                            key={String(item.id)}
-                            className="group flex items-center gap-4 rounded-xl border border-slate-200/70 bg-white p-3 transition hover:border-slate-300 hover:shadow-sm"
-                          >
-                            <div className="flex h-12 w-12 flex-col items-center justify-center rounded-xl bg-gradient-to-br from-slate-900 to-slate-700 text-white">
-                              <span className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-slate-300">
-                                {start
-                                  ? weekdayFormatter.format(new Date(start))
-                                  : "—"}
-                              </span>
-                              <span className="font-serif text-xl leading-none">
-                                {start
-                                  ? new Date(start).getDate()
-                                  : "·"}
-                              </span>
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-slate-900">
-                                {String(item.title)}
-                              </p>
-                              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                                <span>
-                                  {formatStatusLabel(
-                                    item.sessionType as string,
-                                  ) || "Session"}
-                                </span>
-                                <span>·</span>
-                                <span className="truncate">
-                                  {String(item.locationName ?? "Location TBD")}
-                                </span>
-                                <span>·</span>
-                                <span>{shortDate(start as string)}</span>
-                              </div>
-                            </div>
-                            <Chip tone={statusChipTone(item.status as string)}>
-                              {formatStatusLabel(item.status as string) ||
-                                "scheduled"}
-                            </Chip>
-                            <Link
-                              href={`/session/${item.id}/shot-list`}
-                              className="hidden rounded-lg border border-slate-200 p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-900 group-hover:inline-flex"
-                            >
-                              <Icon.ArrowUpRight className="h-4 w-4" />
-                            </Link>
+                    upcomingSessions.slice(0, 5).map((item: LooseRecord) => {
+                      const start = item.scheduledStart ?? item.scheduled_start;
+                      return (
+                        <div
+                          key={String(item.id)}
+                          className="group flex items-center gap-4 px-5 py-3 transition hover:bg-slate-50/60"
+                        >
+                          <div className="flex h-11 w-11 flex-col items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                            <span className="text-[0.58rem] font-semibold uppercase tracking-wider text-slate-500">
+                              {start
+                                ? weekdayFormatter.format(new Date(start))
+                                : "—"}
+                            </span>
+                            <span className="text-base font-semibold leading-none">
+                              {start ? new Date(start).getDate() : "·"}
+                            </span>
                           </div>
-                        );
-                      })
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-slate-900">
+                              {String(item.title)}
+                            </p>
+                            <p className="mt-0.5 truncate text-xs text-slate-500">
+                              {String(item.locationName ?? "Location TBD")}
+                              {" · "}
+                              {shortDate(start as string)}
+                            </p>
+                          </div>
+                          <Chip tone={statusChipTone(item.status as string)}>
+                            {formatStatusLabel(item.status as string) ||
+                              "scheduled"}
+                          </Chip>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </Card>
 
               <Card>
-                <SectionHeader
-                  eyebrow="Timer"
-                  title={activeEntry.id ? "Running now" : "Start tracking"}
+                <SectionTitle
+                  title="Timer"
+                  meta={
+                    activeEntry.id
+                      ? `Running · ${duration(activeMinutes)}`
+                      : undefined
+                  }
                 />
                 {activeEntry.id ? (
-                  <div className="mt-5 space-y-4">
-                    <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-rose-100 p-5 ring-1 ring-rose-200">
-                      <div className="flex items-center justify-between">
-                        <Chip tone="rose">● Running</Chip>
-                        <span className="font-mono text-sm text-rose-700">
-                          {duration(activeMinutes)}
-                        </span>
-                      </div>
-                      <p className="mt-3 text-lg font-semibold text-slate-900">
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-lg border border-rose-200 bg-rose-50 p-3">
+                      <p className="text-sm font-medium text-slate-900">
                         {String(activeEntry.title)}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-0.5 text-xs text-slate-500">
                         Started {shortDate(activeEntry.startedAt as string)}
                       </p>
                     </div>
                     <textarea
-                      className="min-h-[88px] w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+                      className="min-h-[72px] w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-900/5"
                       value={timeNotes}
                       onChange={(event) => setTimeNotes(event.target.value)}
-                      placeholder="Notes before stopping…"
+                      placeholder="Notes before stopping"
                     />
                     <button
                       type="button"
                       onClick={() => void stopTimer()}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
                     >
-                      <Icon.Stop className="h-3.5 w-3.5" />
                       Stop timer
                     </button>
                   </div>
                 ) : (
-                  <div className="mt-5 space-y-3">
+                  <div className="mt-4 space-y-3">
                     <input
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+                      className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-900/5"
                       value={timeTitle}
                       onChange={(event) => setTimeTitle(event.target.value)}
                       placeholder="What are you working on?"
                     />
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1">
                       {[
                         ["admin", "Admin"],
-                        ["standalone", "Standalone"],
                         ["session", "Session"],
                         ["studio_booking", "Studio"],
+                        ["standalone", "Other"],
                       ].map(([value, label]) => (
                         <button
                           key={value}
                           type="button"
                           onClick={() => setTimeScope(value)}
-                          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${timeScope === value ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                          className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${timeScope === value ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
                         >
                           {label}
                         </button>
@@ -1279,19 +1202,16 @@ export default function StudioOsApp() {
                     <button
                       type="button"
                       onClick={() => void quickStartTimer()}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_6px_20px_-8px_rgba(99,102,241,0.6)] transition hover:brightness-110"
+                      className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
                     >
-                      <Icon.Play className="h-3.5 w-3.5" />
-                      Start timer
+                      Start
                     </button>
                   </div>
                 )}
-                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-200 pt-5 text-sm">
+                <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3 text-sm">
                   <div>
-                    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      Today
-                    </p>
-                    <p className="mt-1 font-serif text-2xl text-slate-900">
+                    <p className="text-[0.72rem] text-slate-500">Today</p>
+                    <p className="mt-0.5 font-semibold text-slate-900">
                       {duration(
                         asRecord(asRecord(dashboard?.time).summary)
                           .todayMinutes as number,
@@ -1299,10 +1219,8 @@ export default function StudioOsApp() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      This week
-                    </p>
-                    <p className="mt-1 font-serif text-2xl text-slate-900">
+                    <p className="text-[0.72rem] text-slate-500">This week</p>
+                    <p className="mt-0.5 font-semibold text-slate-900">
                       {duration(
                         asRecord(asRecord(dashboard?.time).summary)
                           .weekMinutes as number,
@@ -1315,31 +1233,29 @@ export default function StudioOsApp() {
           </section>
 
           {errorMessage ? (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
               {errorMessage}
             </div>
           ) : null}
 
           {/* Pipeline */}
-          <section id="pipeline" className="scroll-mt-24 space-y-4">
-            <SectionHeader
-              eyebrow="Pipeline"
-              title="Inquiries board"
-              description="Kanban view of every inquiry, from new → booked. Drag-and-drop coming in the alpha."
+          <section id="pipeline" className="scroll-mt-20 space-y-4">
+            <SectionTitle
+              title="Pipeline"
               action={
                 <>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300"
+                    className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
                   >
                     Filter
                   </button>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+                    className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-800"
                   >
                     <Icon.Plus className="h-3 w-3" />
-                    Add
+                    Inquiry
                   </button>
                 </>
               }
@@ -1347,24 +1263,25 @@ export default function StudioOsApp() {
             <PipelineBoard inquiries={asArray(dashboard?.inquiries)} />
 
             <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-              <Card>
-                <SectionHeader
-                  eyebrow="Smart files"
-                  title="Contracts and questionnaires"
-                />
-                <div className="mt-4 divide-y divide-slate-100">
+              <Card padding="p-0">
+                <div className="px-5 py-3.5">
+                  <SectionTitle title="Smart files" />
+                </div>
+                <div className="divide-y divide-slate-100 border-t border-slate-100">
                   {asArray(dashboard?.smartFiles).slice(0, 6).length === 0 ? (
-                    <EmptyRow>No smart files in flight.</EmptyRow>
+                    <div className="px-5 py-6 text-sm text-slate-400">
+                      No smart files in flight.
+                    </div>
                   ) : (
                     asArray(dashboard?.smartFiles)
                       .slice(0, 6)
                       .map((item: LooseRecord) => (
                         <div
                           key={String(item.id)}
-                          className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                          className="flex items-center justify-between gap-3 px-5 py-3"
                         >
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900">
+                            <p className="truncate text-sm font-medium text-slate-900">
                               {String(item.title)}
                             </p>
                             <p className="truncate text-xs text-slate-500">
@@ -1384,37 +1301,31 @@ export default function StudioOsApp() {
                 </div>
               </Card>
 
-              <Card>
-                <SectionHeader
-                  eyebrow="Client value"
-                  title="Repeat-booking radar"
-                />
-                <div className="mt-4 space-y-2.5">
+              <Card padding="p-0">
+                <div className="px-5 py-3.5">
+                  <SectionTitle title="Top clients by LTV" />
+                </div>
+                <div className="divide-y divide-slate-100 border-t border-slate-100">
                   {asArray(asRecord(dashboard?.ltv).clients)
                     .slice(0, 5)
                     .map((item: LooseRecord, idx) => (
                       <div
                         key={String(item.clientId ?? idx)}
-                        className="flex items-center gap-3 rounded-xl bg-slate-50 p-3"
+                        className="flex items-center gap-3 px-5 py-3"
                       >
-                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
-                          {String(item.name ?? "?")
-                            .split(" ")
-                            .slice(0, 2)
-                            .map((piece) => piece[0])
-                            .join("")
-                            .toUpperCase()}
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+                          {initialsOf(String(item.name))}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-slate-900">
+                          <p className="truncate text-sm font-medium text-slate-900">
                             {String(item.name)}
                           </p>
                           <p className="text-xs text-slate-500">
-                            {money(item.lifetimeValueCents as number)} LTV
+                            {money(item.lifetimeValueCents as number)}
                           </p>
                         </div>
                         {item.repeatBookingLikely ? (
-                          <Chip tone="emerald">Likely repeat</Chip>
+                          <Chip tone="emerald">repeat</Chip>
                         ) : null}
                       </div>
                     ))}
@@ -1424,18 +1335,16 @@ export default function StudioOsApp() {
           </section>
 
           {/* Sessions */}
-          <section id="sessions" className="scroll-mt-24 space-y-4">
-            <SectionHeader
-              eyebrow="Photography CRM"
+          <section id="sessions" className="scroll-mt-20 space-y-4">
+            <SectionTitle
               title="Sessions"
-              description="Every booked shoot, with mobile shot lists and per-session timers."
               action={
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+                  className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-800"
                 >
                   <Icon.Plus className="h-3 w-3" />
-                  Add
+                  Session
                 </button>
               }
             />
@@ -1443,60 +1352,66 @@ export default function StudioOsApp() {
             <Card padding="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <thead className="border-b border-slate-100 text-left text-[0.72rem] font-medium uppercase tracking-wider text-slate-500">
                     <tr>
-                      <th className="px-5 py-3 text-left">Session</th>
-                      <th className="px-5 py-3 text-left">When</th>
-                      <th className="px-5 py-3 text-left">Client</th>
-                      <th className="px-5 py-3 text-left">Status</th>
-                      <th className="px-5 py-3 text-right">Actions</th>
+                      <th className="px-5 py-2.5">Session</th>
+                      <th className="px-5 py-2.5">Date</th>
+                      <th className="px-5 py-2.5">Client</th>
+                      <th className="px-5 py-2.5">Status</th>
+                      <th className="px-5 py-2.5 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {asArray(dashboard?.sessions).length === 0 ? (
                       <tr>
                         <td colSpan={5}>
-                          <EmptyRow>No sessions yet.</EmptyRow>
+                          <div className="px-5 py-6 text-sm text-slate-400">
+                            No sessions yet.
+                          </div>
                         </td>
                       </tr>
                     ) : (
                       asArray(dashboard?.sessions)
                         .slice(0, 8)
                         .map((item: LooseRecord) => (
-                          <tr key={String(item.id)} className="transition hover:bg-slate-50/60">
-                            <td className="px-5 py-3.5">
-                              <p className="font-semibold text-slate-900">
+                          <tr
+                            key={String(item.id)}
+                            className="transition hover:bg-slate-50/60"
+                          >
+                            <td className="px-5 py-3">
+                              <p className="font-medium text-slate-900">
                                 {String(item.title)}
                               </p>
                               <p className="text-xs text-slate-500">
                                 {formatStatusLabel(
                                   item.sessionType as string,
-                                ) || "Session"}{" "}
-                                · {String(item.locationName ?? "Location TBD")}
+                                ) || "session"}
+                                {" · "}
+                                {String(item.locationName ?? "Location TBD")}
                               </p>
                             </td>
-                            <td className="px-5 py-3.5 text-slate-600">
-                              <span className="whitespace-nowrap">
+                            <td className="px-5 py-3 text-slate-700">
+                              <p className="whitespace-nowrap">
                                 {shortDate(item.scheduledStart as string)}
-                              </span>
-                              <span className="mt-0.5 block text-xs text-slate-400">
+                              </p>
+                              <p className="text-xs text-slate-400">
                                 {relative(item.scheduledStart as string)}
-                              </span>
+                              </p>
                             </td>
-                            <td className="px-5 py-3.5 text-slate-600">
+                            <td className="px-5 py-3 text-slate-700">
                               {String(item.clientName ?? "—")}
                             </td>
-                            <td className="px-5 py-3.5">
+                            <td className="px-5 py-3">
                               <Chip tone={statusChipTone(item.status as string)}>
                                 {formatStatusLabel(item.status as string) ||
                                   "scheduled"}
                               </Chip>
                             </td>
-                            <td className="px-5 py-3.5 text-right">
-                              <div className="inline-flex items-center gap-1.5">
+                            <td className="px-5 py-3 text-right">
+                              <div className="inline-flex items-center gap-1">
                                 <Link
                                   href={`/session/${item.id}/shot-list`}
-                                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[0.7rem] font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                                  className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.72rem] font-medium text-slate-700 transition hover:border-slate-300"
                                 >
                                   Shot list
                                 </Link>
@@ -1509,9 +1424,9 @@ export default function StudioOsApp() {
                                       String(item.title),
                                     )
                                   }
-                                  className="rounded-lg bg-slate-900 px-2.5 py-1.5 text-[0.7rem] font-semibold text-white transition hover:bg-slate-800"
+                                  className="rounded-md bg-slate-900 px-2 py-1 text-[0.72rem] font-medium text-white transition hover:bg-slate-800"
                                 >
-                                  Start timer
+                                  Timer
                                 </button>
                               </div>
                             </td>
@@ -1523,194 +1438,190 @@ export default function StudioOsApp() {
               </div>
             </Card>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {asArray(asRecord(dashboard?.conversion).byEventType)
-                .slice(0, 4)
-                .map((item: LooseRecord) => {
-                  const rate = Number(item.conversionRate ?? 0);
-                  const pct = Math.round(rate * 100);
-                  return (
-                    <Card key={String(item.eventType)}>
-                      <div className="flex items-center justify-between">
-                        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                          {formatStatusLabel(item.eventType as string)}
+            <div>
+              <SectionTitle title="Conversion by type" />
+              <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {asArray(asRecord(dashboard?.conversion).byEventType)
+                  .slice(0, 4)
+                  .map((item: LooseRecord) => {
+                    const rate = Number(item.conversionRate ?? 0);
+                    const pct = Math.round(rate * 100);
+                    return (
+                      <div
+                        key={String(item.eventType)}
+                        className="rounded-xl border border-slate-200 bg-white p-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium capitalize text-slate-900">
+                            {formatStatusLabel(item.eventType as string)}
+                          </p>
+                          <span className="text-sm font-semibold text-slate-900">
+                            {pct}%
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {Number(item.bookedCount ?? 0)} booked of{" "}
+                          {Number(item.inquiryCount ?? 0)}
                         </p>
-                        <Chip
-                          tone={
-                            pct >= 60
-                              ? "emerald"
-                              : pct >= 45
-                                ? "sky"
-                                : pct >= 30
-                                  ? "amber"
-                                  : "rose"
-                          }
-                        >
-                          {pct}%
-                        </Chip>
+                        <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-slate-900"
+                            style={{ width: `${Math.min(100, pct)}%` }}
+                          />
+                        </div>
                       </div>
-                      <p className="mt-3 font-serif text-2xl text-slate-900">
-                        {Number(item.bookedCount ?? 0)} / {Number(item.inquiryCount ?? 0)}
-                      </p>
-                      <p className="text-xs text-slate-500">booked from inquiries</p>
-                      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
-                          style={{ width: `${Math.min(100, pct)}%` }}
-                        />
-                      </div>
-                    </Card>
-                  );
-                })}
+                    );
+                  })}
+              </div>
             </div>
           </section>
 
           {/* Studio */}
-          <section id="studio" className="scroll-mt-24 space-y-4">
-            <SectionHeader
-              eyebrow="Creator studio"
-              title="Bookings, spaces, and access"
-              description="Live studio rental ops. Each booking exposes a mobile check-in flow."
-            />
+          <section id="studio" className="scroll-mt-20 space-y-4">
+            <SectionTitle title="Studio" />
 
             <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-              <Card>
-                <div className="space-y-2.5">
-                  {asArray(dashboard?.bookings).slice(0, 6).map((item: LooseRecord) => (
-                    <div
-                      key={String(item.id)}
-                      className="flex flex-col gap-3 rounded-xl border border-slate-200/70 bg-white p-3.5 transition hover:border-slate-300 hover:shadow-sm lg:flex-row lg:items-center"
-                    >
-                      <div className="flex flex-1 items-center gap-3">
-                        <div className="flex h-10 w-10 flex-col items-center justify-center rounded-lg bg-slate-900 text-white">
-                          <span className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
+              <Card padding="p-0">
+                <div className="px-5 py-3.5">
+                  <SectionTitle title="Bookings" />
+                </div>
+                <div className="divide-y divide-slate-100 border-t border-slate-100">
+                  {asArray(dashboard?.bookings)
+                    .slice(0, 6)
+                    .map((item: LooseRecord) => (
+                      <div
+                        key={String(item.id)}
+                        className="flex items-center gap-3 px-5 py-3"
+                      >
+                        <div className="flex h-10 w-10 flex-shrink-0 flex-col items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                          <span className="text-[0.56rem] font-semibold uppercase tracking-wider text-slate-500">
                             {item.bookingStart
                               ? weekdayFormatter.format(
                                   new Date(item.bookingStart as string),
                                 )
                               : "—"}
                           </span>
-                          <span className="font-serif text-base leading-none">
+                          <span className="text-sm font-semibold leading-none">
                             {item.bookingStart
                               ? new Date(item.bookingStart as string).getDate()
                               : "·"}
                           </span>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-slate-900">
+                          <p className="truncate text-sm font-medium text-slate-900">
                             {String(item.purpose ?? "Studio rental")}
                           </p>
                           <p className="truncate text-xs text-slate-500">
-                            {shortDate(item.bookingStart as string)} · Code{" "}
+                            {shortDate(item.bookingStart as string)}
+                            {" · code "}
                             <span className="font-mono text-slate-700">
-                              {String(item.accessCode ?? "pending")}
+                              {String(item.accessCode ?? "—")}
                             </span>
                           </p>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
                         <Chip tone={statusChipTone(item.status as string)}>
                           {formatStatusLabel(item.status as string)}
                         </Chip>
-                        {item.depositPaid ? (
-                          <Chip tone="emerald">Deposit paid</Chip>
-                        ) : (
-                          <Chip tone="amber">Deposit pending</Chip>
-                        )}
                         <Link
                           href={`/studio-booking/${item.id}/check-in`}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[0.7rem] font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                          className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.72rem] font-medium text-slate-700 transition hover:border-slate-300"
                         >
                           Check-in
                         </Link>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </Card>
 
               <div className="grid gap-4">
-                <Card>
-                  <SectionHeader eyebrow="Spaces" title="Bays and utilization" />
-                  <div className="mt-4 space-y-2">
-                    {asArray(dashboard?.spaces).slice(0, 4).map((item: LooseRecord) => (
-                      <div
-                        key={String(item.id)}
-                        className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5 text-sm"
-                      >
-                        <span className="font-medium text-slate-900">
-                          {String(item.name)}
-                        </span>
-                        <span className="text-slate-500">
-                          {money(item.hourlyRateCents as number)}/hr
-                        </span>
-                      </div>
-                    ))}
+                <Card padding="p-0">
+                  <div className="px-5 py-3.5">
+                    <SectionTitle title="Spaces" />
                   </div>
-                </Card>
-                <Card>
-                  <SectionHeader eyebrow="Gear" title="Equipment inventory" />
-                  <div className="mt-4 space-y-2">
-                    {asArray(dashboard?.equipment).slice(0, 5).map((item: LooseRecord) => {
-                      const owned = Number(item.quantityOwned ?? 0);
-                      const avail = Number(item.quantityAvailable ?? 0);
-                      const out = owned - avail;
-                      return (
+                  <div className="divide-y divide-slate-100 border-t border-slate-100">
+                    {asArray(dashboard?.spaces)
+                      .slice(0, 4)
+                      .map((item: LooseRecord) => (
                         <div
                           key={String(item.id)}
-                          className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5 text-sm"
+                          className="flex items-center justify-between px-5 py-2.5 text-sm"
                         >
-                          <span className="font-medium text-slate-900">
+                          <span className="text-slate-900">
                             {String(item.name)}
                           </span>
-                          <div className="flex items-center gap-2">
-                            {out > 0 ? (
-                              <Chip tone="amber">{out} out</Chip>
-                            ) : (
-                              <Chip tone="emerald">All in</Chip>
-                            )}
-                            <span className="font-mono text-xs text-slate-500">
-                              {avail}/{owned}
-                            </span>
-                          </div>
+                          <span className="text-xs text-slate-500">
+                            {money(item.hourlyRateCents as number)}/hr
+                          </span>
                         </div>
-                      );
-                    })}
+                      ))}
+                  </div>
+                </Card>
+                <Card padding="p-0">
+                  <div className="px-5 py-3.5">
+                    <SectionTitle title="Equipment" />
+                  </div>
+                  <div className="divide-y divide-slate-100 border-t border-slate-100">
+                    {asArray(dashboard?.equipment)
+                      .slice(0, 5)
+                      .map((item: LooseRecord) => {
+                        const owned = Number(item.quantityOwned ?? 0);
+                        const avail = Number(item.quantityAvailable ?? 0);
+                        const out = owned - avail;
+                        return (
+                          <div
+                            key={String(item.id)}
+                            className="flex items-center justify-between px-5 py-2.5 text-sm"
+                          >
+                            <span className="text-slate-900">
+                              {String(item.name)}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {out > 0 ? (
+                                <Chip tone="amber">{out} out</Chip>
+                              ) : null}
+                              <span className="font-mono text-xs text-slate-500">
+                                {avail}/{owned}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </Card>
               </div>
             </div>
 
             <Card>
-              <SectionHeader
-                eyebrow="Studio story"
-                title={foldedStudioSource.name}
-                description={foldedStudioSource.strapline}
-                action={
-                  <Link
-                    href="/studio"
-                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-300"
-                  >
-                    View studio page
-                    <Icon.ArrowUpRight />
-                  </Link>
-                }
-              />
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs text-slate-500">Public listing</p>
+                  <h3 className="mt-0.5 text-lg font-semibold text-slate-900">
+                    {foldedStudioSource.name}
+                  </h3>
+                </div>
+                <Link
+                  href="/studio"
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Preview
+                  <Icon.ArrowUpRight />
+                </Link>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
                 {foldedStudioSource.rates.map((rate) => (
                   <div
                     key={rate.label}
-                    className="rounded-xl bg-gradient-to-br from-slate-50 to-white p-4 ring-1 ring-slate-200"
+                    className="rounded-lg border border-slate-200 p-3"
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-900">
+                      <p className="text-sm font-medium text-slate-900">
                         {rate.label}
                       </p>
-                      <span className="font-serif text-xl text-slate-900">
+                      <span className="text-sm font-semibold text-slate-900">
                         {rate.price}
                       </span>
                     </div>
-                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
                       {rate.details}
                     </p>
                   </div>
@@ -1720,40 +1631,33 @@ export default function StudioOsApp() {
           </section>
 
           {/* Finance */}
-          <section id="finance" className="scroll-mt-24 space-y-4">
-            <SectionHeader
-              eyebrow="Finance"
-              title="Revenue, invoices, and payments"
-              description="Stripe checkout runs the card path; manual ledger handles Zelle, cash, check, Venmo, ACH."
-            />
+          <section id="finance" className="scroll-mt-20 space-y-4">
+            <SectionTitle title="Finance" />
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <StatCard
-                label="Photo revenue paid"
+                label="Photo revenue"
                 value={money(
                   asRecord(asRecord(dashboard?.revenue).totals)
                     .photoPaidCents as number,
                 )}
-                sublabel={`${currentYearLabel()} YTD`}
-                tone="indigo"
+                sublabel={`${new Date().getUTCFullYear()} YTD`}
               />
               <StatCard
-                label="Studio revenue paid"
+                label="Studio revenue"
                 value={money(
                   asRecord(asRecord(dashboard?.revenue).totals)
                     .studioPaidCents as number,
                 )}
-                sublabel={`${currentYearLabel()} YTD`}
-                tone="violet"
+                sublabel={`${new Date().getUTCFullYear()} YTD`}
               />
               <StatCard
-                label="Outstanding A/R"
+                label="Outstanding"
                 value={money(
                   asRecord(asRecord(dashboard?.revenue).totals)
                     .outstandingCents as number,
                 )}
-                sublabel="across all invoices"
-                tone="amber"
+                sublabel="all open invoices"
               />
               <StatCard
                 label="Profit"
@@ -1761,46 +1665,41 @@ export default function StudioOsApp() {
                   asRecord(asRecord(dashboard?.profit).totals)
                     .profitCents as number,
                 )}
-                sublabel="revenue minus expenses"
-                tone="emerald"
+                sublabel="revenue − expenses"
               />
             </div>
 
             <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
               <Card padding="p-0">
-                <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                  <div>
-                    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Invoices
-                    </p>
-                    <p className="mt-0.5 text-sm text-slate-500">
-                      Current open and recently closed
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between px-5 py-3.5">
+                  <SectionTitle title="Invoices" />
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+                    className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-800"
                   >
                     <Icon.Plus className="h-3 w-3" />
-                    New invoice
+                    Invoice
                   </button>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto border-t border-slate-100">
                   <table className="w-full text-sm">
-                    <thead className="bg-slate-50 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    <thead className="text-left text-[0.72rem] font-medium uppercase tracking-wider text-slate-500">
                       <tr>
-                        <th className="px-5 py-3 text-left">Client</th>
-                        <th className="px-5 py-3 text-left">Type</th>
-                        <th className="px-5 py-3 text-right">Total</th>
-                        <th className="px-5 py-3 text-right">Balance</th>
-                        <th className="px-5 py-3 text-left">Status</th>
+                        <th className="px-5 py-2.5">Client</th>
+                        <th className="px-5 py-2.5">Type</th>
+                        <th className="px-5 py-2.5 text-right">Total</th>
+                        <th className="px-5 py-2.5 text-right">Balance</th>
+                        <th className="px-5 py-2.5">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 border-t border-slate-100">
                       {asArray(dashboard?.invoices)
                         .slice(0, 6)
                         .map((item: LooseRecord) => (
-                          <tr key={String(item.id)} className="transition hover:bg-slate-50/60">
+                          <tr
+                            key={String(item.id)}
+                            className="transition hover:bg-slate-50/60"
+                          >
                             <td className="px-5 py-3 font-medium text-slate-900">
                               {String(
                                 item.clientName ??
@@ -1831,28 +1730,31 @@ export default function StudioOsApp() {
               </Card>
 
               <Card>
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Payment provider
+                    <p className="text-xs text-slate-500">Provider</p>
+                    <p className="mt-0.5 text-lg font-semibold capitalize text-slate-900">
+                      {String(topProvider.provider ?? "manual")}
                     </p>
-                    <p className="mt-1 font-serif text-2xl text-slate-900">
-                      {String(topProvider.provider ?? "manual").toUpperCase()}
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Mode {String(topProvider.mode ?? "test")}
                     </p>
                   </div>
                   <Chip tone={providerAvailable ? "emerald" : "amber"}>
-                    {providerAvailable ? "Configured" : "Manual fallback"}
+                    {providerAvailable ? "active" : "manual only"}
                   </Chip>
                 </div>
-                <p className="mt-2 text-xs text-slate-500">
-                  Mode: {String(topProvider.mode ?? "test")} ·{" "}
-                  {providerAvailable
-                    ? "Stripe checkout active"
-                    : String(topProvider.reason ?? "Missing Stripe secret")}
-                </p>
+                {!providerAvailable ? (
+                  <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    {String(
+                      topProvider.reason ??
+                        "Stripe secret missing; manual ledger only.",
+                    )}
+                  </p>
+                ) : null}
 
-                <div className="mt-5 space-y-2">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">
+                  <p className="text-xs font-medium text-slate-500">
                     Recent payments
                   </p>
                   {asArray(dashboard?.payments)
@@ -1861,14 +1763,15 @@ export default function StudioOsApp() {
                     .map((item: LooseRecord) => (
                       <div
                         key={String(item.id)}
-                        className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3"
+                        className="flex items-center justify-between gap-3 text-sm"
                       >
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-900">
+                          <p className="truncate font-medium text-slate-900">
                             {money(item.amountCents as number)}
                           </p>
                           <p className="truncate text-xs text-slate-500">
-                            {formatStatusLabel(item.method as string)} ·{" "}
+                            {formatStatusLabel(item.method as string)}
+                            {" · "}
                             {relative(item.receivedAt as string)}
                           </p>
                         </div>
@@ -1880,10 +1783,10 @@ export default function StudioOsApp() {
                               void refundStripePayment(String(item.id))
                             }
                             disabled={refundingPaymentId === item.id}
-                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[0.68rem] font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 disabled:opacity-50"
+                            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.7rem] font-medium text-slate-700 transition hover:border-slate-300 disabled:opacity-50"
                           >
                             {refundingPaymentId === item.id
-                              ? "Refunding…"
+                              ? "…"
                               : "Refund"}
                           </button>
                         ) : null}
@@ -1893,28 +1796,43 @@ export default function StudioOsApp() {
               </Card>
             </div>
 
-            <Card>
-              <SectionHeader eyebrow="Expenses" title="Recent spend" />
-              <div className="mt-4 grid gap-2.5 md:grid-cols-2">
+            <Card padding="p-0">
+              <div className="px-5 py-3.5">
+                <SectionTitle title="Recent expenses" />
+              </div>
+              <div className="grid gap-0 divide-y divide-slate-100 border-t border-slate-100 md:grid-cols-2 md:divide-x md:divide-y-0">
                 {asArray(dashboard?.expenses)
                   .slice(0, 6)
-                  .map((item: LooseRecord) => (
+                  .reduce<LooseRecord[][]>((cols, item, i) => {
+                    const col = i % 2;
+                    (cols[col] ??= []).push(item);
+                    return cols;
+                  }, [])
+                  .map((col, colIndex) => (
                     <div
-                      key={String(item.id)}
-                      className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"
+                      key={colIndex}
+                      className="divide-y divide-slate-100"
                     >
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-slate-900">
-                          {String(item.description)}
-                        </p>
-                        <p className="truncate text-xs text-slate-500">
-                          {formatStatusLabel(item.category as string)} ·{" "}
-                          {relative(item.spentAt as string)}
-                        </p>
-                      </div>
-                      <span className="font-mono text-slate-900">
-                        {money(item.amountCents as number)}
-                      </span>
+                      {col.map((item) => (
+                        <div
+                          key={String(item.id)}
+                          className="flex items-center justify-between px-5 py-3 text-sm"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-slate-900">
+                              {String(item.description)}
+                            </p>
+                            <p className="truncate text-xs text-slate-500">
+                              {formatStatusLabel(item.category as string)}
+                              {" · "}
+                              {relative(item.spentAt as string)}
+                            </p>
+                          </div>
+                          <span className="font-mono text-slate-900">
+                            {money(item.amountCents as number)}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   ))}
               </div>
@@ -1922,20 +1840,11 @@ export default function StudioOsApp() {
           </section>
 
           {/* Operations */}
-          <section id="operations" className="scroll-mt-24 space-y-4">
-            <SectionHeader
-              eyebrow="Operations"
-              title="Tasks"
-              description="Spawned from recurring automations, session templates, and manual entry."
-            />
+          <section id="operations" className="scroll-mt-20 space-y-4">
+            <SectionTitle title="Tasks" />
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {(["open", "in_progress", "completed"] as const).map((state) => {
-                const toneByState: Record<typeof state, ChipTone> = {
-                  open: "violet",
-                  in_progress: "sky",
-                  completed: "emerald",
-                };
                 const rows = asArray(dashboard?.tasks).filter((t) =>
                   state === "completed"
                     ? (t.status as string) === "completed"
@@ -1943,35 +1852,59 @@ export default function StudioOsApp() {
                       ? (t.status as string) === "in_progress"
                       : (t.status as string) === "open" || !t.status,
                 );
+                const dotColor =
+                  state === "open"
+                    ? "bg-violet-500"
+                    : state === "in_progress"
+                      ? "bg-sky-500"
+                      : "bg-emerald-500";
                 return (
                   <div
                     key={state}
-                    className="rounded-2xl bg-slate-50/70 p-3 ring-1 ring-slate-200/70"
+                    className="rounded-xl border border-slate-200 bg-slate-50/60 p-3"
                   >
-                    <div className="flex items-center justify-between px-1 pb-2">
-                      <Chip tone={toneByState[state]}>
-                        {formatStatusLabel(state)}
-                      </Chip>
-                      <span className="text-xs font-medium text-slate-500">
-                        {rows.length}
-                      </span>
+                    <div className="flex items-center justify-between px-1 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
+                        <span className="text-sm font-medium text-slate-700">
+                          {formatStatusLabel(state)}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          {rows.length}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Add task"
+                        className="rounded p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+                      >
+                        <Icon.Plus className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                     <div className="space-y-2">
                       {rows.length === 0 ? (
-                        <EmptyRow>Nothing here yet.</EmptyRow>
+                        <div className="rounded-md border border-dashed border-slate-200 bg-white/60 py-4 text-center text-xs text-slate-400">
+                          —
+                        </div>
                       ) : (
                         rows.slice(0, 8).map((item: LooseRecord) => (
                           <div
                             key={String(item.id)}
-                            className="rounded-xl bg-white p-3 ring-1 ring-slate-200/80"
+                            className="rounded-lg border border-slate-200 bg-white p-3"
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <p className="text-sm font-semibold text-slate-900">
+                              <p className="text-sm font-medium text-slate-900">
                                 {String(item.title)}
                               </p>
-                              <Chip tone={priorityTone(item.priority as string)}>
-                                {formatStatusLabel(item.priority as string) || "med"}
-                              </Chip>
+                              {item.priority &&
+                              String(item.priority).toLowerCase() !==
+                                "low" ? (
+                                <Chip
+                                  tone={priorityTone(item.priority as string)}
+                                >
+                                  {String(item.priority)}
+                                </Chip>
+                              ) : null}
                             </div>
                             {item.dueAt ? (
                               <p className="mt-1.5 text-xs text-slate-500">
@@ -1989,59 +1922,49 @@ export default function StudioOsApp() {
           </section>
 
           {/* Inbox */}
-          <section id="inbox" className="scroll-mt-24 space-y-4">
-            <SectionHeader
-              eyebrow="Inbox"
-              title="Unified activity feed"
-              description="Every material event: emails, signatures, payments, automations, bookings."
-            />
-            <Card>
-              <div className="relative space-y-4 pl-5">
-                <div className="absolute inset-y-1 left-1.5 w-px bg-slate-200" />
+          <section id="inbox" className="scroll-mt-20 space-y-4">
+            <SectionTitle title="Activity" />
+            <Card padding="p-0">
+              <ul className="divide-y divide-slate-100">
                 {asArray(dashboard?.inbox).length === 0 ? (
-                  <EmptyRow>Inbox is quiet.</EmptyRow>
+                  <li className="px-5 py-6 text-sm text-slate-400">
+                    Nothing new.
+                  </li>
                 ) : (
                   asArray(dashboard?.inbox).slice(0, 8).map((item: LooseRecord) => (
-                    <div
+                    <li
                       key={String(item.id)}
-                      className="relative rounded-xl bg-slate-50/60 p-3.5 ring-1 ring-slate-200/70"
+                      className="flex items-center justify-between gap-3 px-5 py-3"
                     >
-                      <span className="absolute left-[-1.28rem] top-4 h-2.5 w-2.5 rounded-full bg-white ring-4 ring-slate-200" />
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-slate-900">
-                            {String(item.subject ?? item.activityType ?? "Activity")}
-                          </p>
-                          <p className="mt-0.5 text-xs text-slate-500">
-                            {formatStatusLabel(item.activityType as string)}
-                          </p>
-                        </div>
-                        <span className="whitespace-nowrap text-[0.7rem] text-slate-400">
-                          {relative(item.occurredAt as string)}
-                        </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-slate-900">
+                          {String(
+                            item.subject ?? item.activityType ?? "Activity",
+                          )}
+                        </p>
+                        <p className="truncate text-xs text-slate-500">
+                          {formatStatusLabel(item.activityType as string)}
+                        </p>
                       </div>
-                    </div>
+                      <span className="whitespace-nowrap text-xs text-slate-400">
+                        {relative(item.occurredAt as string)}
+                      </span>
+                    </li>
                   ))
                 )}
-              </div>
+              </ul>
             </Card>
           </section>
 
           {loading ? (
-            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
-              Refreshing dashboard…
-            </div>
+            <div className="text-xs text-slate-500">Syncing…</div>
           ) : null}
 
-          <footer className="py-6 text-center text-xs text-slate-400">
-            Studio OS · beta · built on AWS · {new Date().getFullYear()}
+          <footer className="border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
+            Studio OS · {new Date().getFullYear()}
           </footer>
         </div>
       </div>
     </main>
   );
-}
-
-function currentYearLabel() {
-  return String(new Date().getUTCFullYear());
 }

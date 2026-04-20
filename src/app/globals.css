@@ -47,12 +47,17 @@ a {
   text-decoration: none;
 }
 
+/* Headings default to the sans-serif body font.
+ * Opt into Bodoni serif explicitly with `font-serif` where a display accent
+ * is wanted (hero titles, large metrics). */
 h1,
 h2,
 h3,
-h4 {
-  font-family: var(--font-bodoni), "Times New Roman", serif;
-  font-weight: 400;
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: 600;
 }
 
 /* --- Legacy studio page helpers, kept for /studio reference page --- */
