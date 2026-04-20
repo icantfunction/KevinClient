@@ -1,66 +1,107 @@
-// Stage 10 Studio Preview Page Purpose
+// Stage 11.5 Studio Preview Page Purpose
 import Link from "next/link";
 import { foldedStudioSource } from "@/lib/studio-source";
 import { studioOsRuntimeConfig } from "@/lib/studio-os-config";
 
 export default function StudioPreviewPage() {
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,_#f4efe5_0%,_#ece2d1_100%)] px-5 py-8 text-stone-950">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <section className="rounded-[2rem] border border-stone-900 bg-stone-950 px-8 py-10 text-stone-100 shadow-[0_30px_120px_rgba(0,0,0,0.28)]">
-          <p className="text-[0.68rem] uppercase tracking-[0.28em] text-stone-300">Folded studio source</p>
-          <h1 className="mt-4 max-w-4xl font-serif text-5xl leading-[0.94] lg:text-7xl">{foldedStudioSource.name}</h1>
-          <p className="mt-5 max-w-3xl text-base leading-8 text-stone-300">{foldedStudioSource.strapline}</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/" className="rounded-full bg-white px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-stone-950">
-              Back to admin
-            </Link>
-            <a
-              href={`${studioOsRuntimeConfig.apiUrl}/studio/page`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-stone-100"
-            >
-              Open live public endpoint
-            </a>
+    <main className="min-h-screen bg-slate-50 pb-14 text-slate-900">
+      <div className="mx-auto max-w-6xl space-y-6 px-5 pt-6 lg:px-8">
+        <div className="flex items-center justify-between">
+          <Link
+            href="/"
+            className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-slate-500 transition hover:text-slate-900"
+          >
+            ← Dashboard
+          </Link>
+          <a
+            href={`${studioOsRuntimeConfig.apiUrl}/studio/page`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-slate-700 transition hover:border-slate-300"
+          >
+            Live public endpoint
+            <span aria-hidden>↗</span>
+          </a>
+        </div>
+
+        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 px-8 py-12 text-slate-100 shadow-[0_40px_120px_-30px_rgba(15,23,42,0.4)]">
+          <div className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-indigo-500/20 blur-3xl" />
+          <div className="relative max-w-3xl">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-slate-300">
+              Folded studio source
+            </p>
+            <h1 className="mt-4 font-serif text-5xl leading-[1.02] tracking-tight lg:text-6xl">
+              {foldedStudioSource.name}
+            </h1>
+            <p className="mt-5 text-base leading-7 text-slate-300 lg:text-lg">
+              {foldedStudioSource.strapline}
+            </p>
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr]">
-          <div className="rounded-[1.8rem] border border-stone-200 bg-white/88 p-6 shadow-[0_20px_60px_rgba(84,65,38,0.08)]">
-            <p className="text-[0.68rem] uppercase tracking-[0.28em] text-stone-500">Rates</p>
+        <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-200 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.3)]">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Rates
+            </p>
+            <h2 className="mt-1 font-serif text-2xl">Rental pricing</h2>
             <div className="mt-4 grid gap-3">
               {foldedStudioSource.rates.map((rate) => (
-                <div key={rate.label} className="rounded-3xl border border-stone-200 bg-stone-50 p-4">
+                <div
+                  key={rate.label}
+                  className="rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200"
+                >
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold text-stone-950">{rate.label}</p>
-                    <span className="font-serif text-2xl text-stone-950">{rate.price}</span>
+                    <p className="font-semibold text-slate-900">
+                      {rate.label}
+                    </p>
+                    <span className="font-serif text-xl text-slate-900">
+                      {rate.price}
+                    </span>
                   </div>
-                  <p className="mt-2 text-sm text-stone-600">{rate.details}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {rate.details}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-[1.8rem] border border-stone-200 bg-white/88 p-6 shadow-[0_20px_60px_rgba(84,65,38,0.08)]">
-            <p className="text-[0.68rem] uppercase tracking-[0.28em] text-stone-500">Amenities</p>
-            <div className="mt-4 grid gap-3">
+          <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-200 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.3)]">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Amenities
+            </p>
+            <h2 className="mt-1 font-serif text-2xl">On-site</h2>
+            <ul className="mt-4 grid gap-2">
               {foldedStudioSource.amenities.map((amenity) => (
-                <div key={amenity} className="rounded-3xl border border-stone-200 bg-stone-50 px-4 py-4 text-sm text-stone-700">
-                  {amenity}
-                </div>
+                <li
+                  key={amenity}
+                  className="flex items-start gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200"
+                >
+                  <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500" />
+                  <span>{amenity}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </section>
 
-        <section className="rounded-[1.8rem] border border-stone-200 bg-white/88 p-6 shadow-[0_20px_60px_rgba(84,65,38,0.08)]">
-          <p className="text-[0.68rem] uppercase tracking-[0.28em] text-stone-500">Use cases</p>
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
+        <section className="rounded-2xl bg-white p-6 ring-1 ring-slate-200 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.3)]">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-500">
+            Use cases
+          </p>
+          <h2 className="mt-1 font-serif text-2xl">What fits here</h2>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
             {foldedStudioSource.useCases.map((useCase) => (
-              <div key={useCase.title} className="rounded-3xl border border-stone-200 bg-stone-50 p-5">
-                <p className="font-semibold text-stone-950">{useCase.title}</p>
-                <p className="mt-3 text-sm leading-7 text-stone-600">{useCase.description}</p>
+              <div
+                key={useCase.title}
+                className="rounded-xl bg-gradient-to-br from-slate-50 to-white p-5 ring-1 ring-slate-200"
+              >
+                <p className="font-semibold text-slate-900">{useCase.title}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {useCase.description}
+                </p>
               </div>
             ))}
           </div>

@@ -11,6 +11,7 @@ import {
   type PropsWithChildren,
 } from "react";
 import { studioOsCognitoRegion, studioOsRuntimeConfig } from "@/lib/studio-os-config";
+import { resolveDemoPayload } from "@/lib/studio-os-demo-data";
 
 type AuthStatus = "booting" | "signed_out" | "challenge" | "authenticated";
 
@@ -20,6 +21,45 @@ type AuthSession = {
   readonly idToken: string;
   readonly refreshToken: string;
   readonly expiresAt: number;
+  readonly demoMode?: boolean;
+};
+
+const demoStorageKey = "studio-os-admin-demo-mode-v1";
+
+const isDemoModeActive = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const urlFlag = new URLSearchParams(window.location.search).get("demo");
+  if (urlFlag === "1" || urlFlag === "true") {
+    window.localStorage.setItem(demoStorageKey, "1");
+    return true;
+  }
+
+  if (urlFlag === "0" || urlFlag === "false") {
+    window.localStorage.removeItem(demoStorageKey);
+    return false;
+  }
+
+  return window.localStorage.getItem(demoStorageKey) === "1";
+};
+
+const makeDemoSession = (): AuthSession => ({
+  phoneNumber: "+1 (954) 854-1484",
+  accessToken: "demo.accessToken",
+  idToken: "demo.idToken",
+  refreshToken: "demo.refreshToken",
+  expiresAt: Date.now() + 86400000,
+  demoMode: true,
+});
+
+const demoResponse = (path: string): Response => {
+  const payload = resolveDemoPayload(path) ?? {};
+  return new Response(JSON.stringify(payload), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
 };
 
 type ChallengeState = {
@@ -137,6 +177,13 @@ export function StudioOsAuthProvider({ children }: PropsWithChildren) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isDemoModeActive()) {
+      const nextSession = makeDemoSession();
+      setSession(nextSession);
+      setStatus("authenticated");
+      return;
+    }
+
     const storedSession = loadSession();
     setSession(storedSession);
     setStatus(storedSession ? "authenticated" : "signed_out");
@@ -239,6 +286,10 @@ export function StudioOsAuthProvider({ children }: PropsWithChildren) {
   });
 
   const logout = useEffectEvent(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(demoStorageKey);
+    }
+
     setSession(null);
     setChallenge(null);
     setStatus("signed_out");
@@ -247,6 +298,10 @@ export function StudioOsAuthProvider({ children }: PropsWithChildren) {
   });
 
   const authorizedFetch = useEffectEvent(async (path: string, init: RequestInit = {}) => {
+    if (session?.demoMode) {
+      return demoResponse(path);
+    }
+
     let activeSession = session;
 
     if (isSessionExpired(activeSession) && activeSession?.refreshToken) {
