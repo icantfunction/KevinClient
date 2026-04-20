@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Bodoni_Moda, Manrope } from "next/font/google";
 import "./globals.css";
-import SmoothScroll from "@/components/smooth-scroll";
+import PwaRegister from "@/components/pwa-register";
 
 const bodoni = Bodoni_Moda({
   subsets: ["latin"],
@@ -18,9 +18,16 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "World Wide Events | Minimalist Editorial Photography",
+  title: "Kevin's Studio OS",
   description:
-    "World Wide Events crafts minimalist editorial photography for weddings, celebrations, and destination events worldwide.",
+    "Unified operations dashboard for Kevin's photography practice and creator studio.",
+  manifest: "/manifest.webmanifest",
+  applicationName: "Kevin's Studio OS",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Studio OS",
+  },
 };
 
 export default function RootLayout({
@@ -31,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${manrope.variable} ${bodoni.variable}`}>
       <body className="antialiased">
-        <SmoothScroll />
+        <PwaRegister />
         {children}
       </body>
     </html>

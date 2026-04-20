@@ -1,0 +1,33 @@
+{
+  "name": "@studio-os/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx scripts/migrate.ts",
+    "smoke": "tsx scripts/smoke.ts",
+    "smoke:stage3": "tsx scripts/stage-3-smoke.ts",
+    "smoke:stage4": "tsx scripts/stage-4-smoke.ts",
+    "smoke:stage5": "tsx scripts/stage-5-smoke.ts",
+    "smoke:stage6": "tsx scripts/stage-6-smoke.ts",
+    "smoke:stage7": "tsx scripts/stage-7-smoke.ts",
+    "smoke:stage8": "tsx scripts/stage-8-smoke.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudformation": "^3.1032.0",
+    "@aws-sdk/client-eventbridge": "^3.1032.0",
+    "@aws-sdk/client-rds-data": "^3.1032.0",
+    "drizzle-orm": "^0.44.7",
+    "uuidv7": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "drizzle-kit": "^0.31.7",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

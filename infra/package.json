@@ -1,0 +1,51 @@
+{
+  "name": "studio-os-infra",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.27.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "synth": "cdk -a \"tsx bin/studio-os.ts\" synth",
+    "deploy": "cdk -a \"tsx bin/studio-os.ts\" deploy --require-approval never",
+    "bootstrap": "cdk bootstrap",
+    "prove:otp": "tsx scripts/prove-otp-login.ts",
+    "prove:stage5": "tsx scripts/prove-stage-5-smart-file.ts",
+    "prove:stage6": "tsx scripts/prove-stage-6-galleries.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.911.0",
+    "@aws-sdk/client-cloudformation": "^3.911.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.911.0",
+    "@aws-sdk/client-dynamodb": "^3.911.0",
+    "@aws-sdk/client-lambda": "^3.911.0",
+    "@aws-sdk/client-rds-data": "^3.911.0",
+    "@aws-sdk/client-secrets-manager": "^3.911.0",
+    "@aws-sdk/client-ses": "^3.911.0",
+    "@aws-sdk/client-sns": "^3.911.0",
+    "@aws-sdk/client-sqs": "^3.911.0",
+    "@aws-sdk/client-textract": "^3.911.0",
+    "@aws-sdk/s3-request-presigner": "^3.911.0",
+    "@studio-os/database": "workspace:*",
+    "@aws-sdk/lib-dynamodb": "^3.911.0",
+    "aws-cdk-lib": "^2.220.0",
+    "constructs": "^10.4.2",
+    "drizzle-orm": "^0.44.7",
+    "jose": "^6.1.0",
+    "mailparser": "^3.9.0",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.17.2",
+    "rrule": "^2.8.1",
+    "stripe": "^18.4.0",
+    "source-map-support": "^0.5.21"
+  },
+  "devDependencies": {
+    "@types/mailparser": "^3.4.6",
+    "@types/pdfkit": "^0.17.3",
+    "@types/aws-lambda": "^8.10.156",
+    "@types/node": "^24.9.1",
+    "aws-cdk": "^2.1029.3",
+    "esbuild": "^0.25.11",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

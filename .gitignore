@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/infra/node_modules
+/packages/*/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -19,10 +21,14 @@
 
 # production
 /build
+/infra/cdk.out
+/packages/*/dist
 
 # misc
 .DS_Store
 *.pem
+/.tmp
+/KevinStudio
 
 # debug
 npm-debug.log*
