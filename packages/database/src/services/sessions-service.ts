@@ -107,15 +107,17 @@ export class SessionsService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(sessions).values(inserted);
+    return this.persistMutation(context, async (database) => {
+      await database.insert(sessions).values(inserted);
 
-    return this.recordMutation(context, {
-      entityName: "session",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+      return {
+        entityName: "session",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
   }
 
@@ -132,22 +134,24 @@ export class SessionsService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.database
-      .update(sessions)
-      .set({
-        shotListId: updated.shotListId,
-        updatedAt: updated.updatedAt,
-        version: updated.version,
-      })
-      .where(eq(sessions.id, sessionId));
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(sessions)
+        .set({
+          shotListId: updated.shotListId,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(sessions.id, sessionId));
 
-    return this.recordMutation(context, {
-      entityName: "session",
-      eventName: "updated",
-      entityId: sessionId,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "session",
+        eventName: "updated",
+        entityId: sessionId,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 
@@ -189,45 +193,47 @@ export class SessionsService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.database
-      .update(sessions)
-      .set({
-        clientId: updated.clientId,
-        sessionType: updated.sessionType,
-        title: updated.title,
-        status: updated.status,
-        scheduledStart: updated.scheduledStart,
-        scheduledEnd: updated.scheduledEnd,
-        actualStart: updated.actualStart,
-        actualEnd: updated.actualEnd,
-        locationName: updated.locationName,
-        locationAddress: updated.locationAddress,
-        locationCoords: updated.locationCoords,
-        locationNotes: updated.locationNotes,
-        timeline: updated.timeline,
-        secondShooterName: updated.secondShooterName,
-        assistantName: updated.assistantName,
-        gearNotes: updated.gearNotes,
-        shotListId: updated.shotListId,
-        contractId: updated.contractId,
-        questionnaireResponseId: updated.questionnaireResponseId,
-        invoiceIds: updated.invoiceIds,
-        galleryId: updated.galleryId,
-        weatherForecast: updated.weatherForecast,
-        usesOwnStudio: updated.usesOwnStudio,
-        notes: updated.notes,
-        updatedAt: updated.updatedAt,
-        version: updated.version,
-      })
-      .where(eq(sessions.id, id));
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(sessions)
+        .set({
+          clientId: updated.clientId,
+          sessionType: updated.sessionType,
+          title: updated.title,
+          status: updated.status,
+          scheduledStart: updated.scheduledStart,
+          scheduledEnd: updated.scheduledEnd,
+          actualStart: updated.actualStart,
+          actualEnd: updated.actualEnd,
+          locationName: updated.locationName,
+          locationAddress: updated.locationAddress,
+          locationCoords: updated.locationCoords,
+          locationNotes: updated.locationNotes,
+          timeline: updated.timeline,
+          secondShooterName: updated.secondShooterName,
+          assistantName: updated.assistantName,
+          gearNotes: updated.gearNotes,
+          shotListId: updated.shotListId,
+          contractId: updated.contractId,
+          questionnaireResponseId: updated.questionnaireResponseId,
+          invoiceIds: updated.invoiceIds,
+          galleryId: updated.galleryId,
+          weatherForecast: updated.weatherForecast,
+          usesOwnStudio: updated.usesOwnStudio,
+          notes: updated.notes,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(sessions.id, id));
 
-    return this.recordMutation(context, {
-      entityName: "session",
-      eventName: "updated",
-      entityId: id,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "session",
+        eventName: "updated",
+        entityId: id,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 

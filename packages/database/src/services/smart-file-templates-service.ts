@@ -42,8 +42,6 @@ export class SmartFileTemplatesService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(smartFileTemplates).values(template);
-
     const templateVersion = {
       id: createUuid(),
       templateId: template.id,
@@ -58,21 +56,26 @@ export class SmartFileTemplatesService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(smartFileTemplateVersions).values(templateVersion);
+    return this.persistMutation(context, async (database) => {
+      await database.insert(smartFileTemplates).values(template);
+      await database.insert(smartFileTemplateVersions).values(templateVersion);
 
-    return this.recordMutation(context, {
-      entityName: "smart_file_template",
-      eventName: "created",
-      entityId: template.id,
-      before: null,
-      after: {
-        ...template,
-        initialVersionId: templateVersion.id,
-      },
-      result: {
-        ...template,
-        latestVersion: templateVersion,
-      },
+      return {
+        entityName: "smart_file_template",
+        eventName: "created",
+        entityId: template.id,
+        before: null,
+        after: {
+          ...template,
+          initialVersionId: templateVersion.id,
+          latestVersion: templateVersion,
+        },
+        result: {
+          ...template,
+          initialVersionId: templateVersion.id,
+          latestVersion: templateVersion,
+        },
+      };
     });
   }
 
@@ -98,16 +101,6 @@ export class SmartFileTemplatesService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(smartFileTemplateVersions).values(version);
-    await this.database
-      .update(smartFileTemplates)
-      .set({
-        latestVersionNumber: nextVersionNumber,
-        updatedAt: occurredAt,
-        version: template.version + 1,
-      })
-      .where(eq(smartFileTemplates.id, template.id));
-
     const updatedTemplate = {
       ...template,
       latestVersionNumber: nextVersionNumber,
@@ -115,13 +108,25 @@ export class SmartFileTemplatesService extends BaseDomainService {
       version: template.version + 1,
     };
 
-    return this.recordMutation(context, {
-      entityName: "smart_file_template",
-      eventName: "version_created",
-      entityId: template.id,
-      before: template,
-      after: updatedTemplate,
-      result: updatedTemplate,
+    return this.persistMutation(context, async (database) => {
+      await database.insert(smartFileTemplateVersions).values(version);
+      await database
+        .update(smartFileTemplates)
+        .set({
+          latestVersionNumber: nextVersionNumber,
+          updatedAt: occurredAt,
+          version: template.version + 1,
+        })
+        .where(eq(smartFileTemplates.id, template.id));
+
+      return {
+        entityName: "smart_file_template",
+        eventName: "version_created",
+        entityId: template.id,
+        before: template,
+        after: updatedTemplate,
+        result: updatedTemplate,
+      };
     });
   }
 

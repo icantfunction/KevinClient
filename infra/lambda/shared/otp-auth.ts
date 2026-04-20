@@ -16,6 +16,7 @@ const readRequiredEnv = (name: string): string => {
 };
 
 export const getAllowedPhoneNumber = (): string => readRequiredEnv("ALLOWED_PHONE_NUMBER");
+export const getTemporaryOtpOverrideCode = (): string | null => process.env.TEMPORARY_OTP_OVERRIDE_CODE?.trim() || null;
 
 export const getPhoneHashSalt = async (): Promise<string> => {
   if (cachedSalt) {

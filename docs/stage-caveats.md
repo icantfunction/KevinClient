@@ -12,12 +12,22 @@ Residual risk:
 - Ticket `0.3` `in_progress` on `2026-04-19`: confirmed `studio-os/stripe/test` and `studio-os/stripe/live` are still missing, so the Stripe path remains commercially inert. Added [stripe-runbook.md](C:/Users/dramo/KevinClient/docs/stripe-runbook.md:1) with the exact secret JSON shape, webhook URL, smoke procedure, test cards, and rotation procedure. Also patched the webhook success path to send a payment receipt email once Stripe secrets and SES sender configuration are present.
 Residual risk:
 - Ticket `0.3` is not closed yet. No Stripe secrets exist in AWS Secrets Manager, no Stripe webhook endpoint is registered in Kevin's Stripe dashboard yet, and no end-to-end payment or refund test has been run.
+- Temporary auth override on `2026-04-19`: deployed a Kevin-only OTP fallback so the Cognito custom auth flow accepts `999999` for the allowlisted phone `+19548541484` even while SNS delivery remains blocked. Verified live against the deployed user pool by completing `AdminInitiateAuth -> AdminRespondToAuthChallenge` and receiving access plus refresh tokens without SMS.
+Residual risk:
+- This is intentionally temporary and weakens the OTP story until it is removed. It is limited to Kevin's single allowed phone number, but it must be deleted as soon as SNS production delivery is working.
+- Ticket `1.1` `partial` on `2026-04-19`: added and migrated the `event_outbox` table, refactored the shared database mutation path so most service-layer writes now enqueue audit plus outbox artifacts transactionally, deployed the scheduled outbox publisher Lambda plus CloudWatch alarms, and reran a live smoke where a new inquiry created an outbox row that was later marked with `published_at` after publish.
+Residual risk:
+- Ticket `1.1` is not fully closed yet. The raw SQL studio-bookings path still uses the older post-write mutation path, EventBridge itself still cannot accept a caller-supplied top-level event ID so downstream idempotency relies on `detail.eventId`, and the 50-write interruption test has not been run yet.
+- Ticket `1.2` `partial` on `2026-04-19`: added monthly audit partition precreation code, deployed the scheduled Lambda that creates the next two months' partitions, and added an EMF warning metric when a write path has to create a partition on demand. A Data API `regclass` edge case was fixed during rollout by casting `to_regclass(... )` to text before reading it.
+Residual risk:
+- Ticket `1.2` is not fully closed yet. The scheduler is live, but the "30 days with zero fallback warnings" acceptance window has not elapsed yet.
 
 ## Stage 1 caveats carried forward
 
 - SNS SMS is still in sandbox in `us-east-1`.
 - No sandbox phone numbers are verified yet, so real human receipt of the OTP SMS has not been validated on Kevin's device.
 - The Cognito custom auth flow itself was verified end-to-end by issuing a challenge, deriving the stored OTP from the hashed record inside the AWS account, and exchanging it for access, ID, and refresh tokens.
+- A temporary Kevin-only OTP override is currently active: `999999` will satisfy the Cognito challenge for `+19548541484` until it is explicitly removed.
 - The AWS account-level SMS monthly spend limit is still `1 USD`.
 - The desired `20 USD` spend cap cannot be applied until AWS approves higher SNS production SMS limits for this account.
 - Stage 1 therefore set only `DefaultSMSType=Transactional` via SNS account attributes.

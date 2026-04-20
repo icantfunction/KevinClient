@@ -50,15 +50,17 @@ export class ExpenseReceiptScansService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(expenseReceiptScans).values(inserted);
+    return this.persistMutation(context, async (database) => {
+      await database.insert(expenseReceiptScans).values(inserted);
 
-    return this.recordMutation(context, {
-      entityName: "expense_receipt_scan",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+      return {
+        entityName: "expense_receipt_scan",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
   }
 
@@ -82,28 +84,30 @@ export class ExpenseReceiptScansService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.database
-      .update(expenseReceiptScans)
-      .set({
-        status: updated.status,
-        vendor: updated.vendor,
-        receiptDate: updated.receiptDate,
-        totalCents: updated.totalCents,
-        taxCents: updated.taxCents,
-        ocrResult: updated.ocrResult,
-        failureReason: updated.failureReason,
-        updatedAt: updated.updatedAt,
-        version: updated.version,
-      })
-      .where(eq(expenseReceiptScans.id, id));
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(expenseReceiptScans)
+        .set({
+          status: updated.status,
+          vendor: updated.vendor,
+          receiptDate: updated.receiptDate,
+          totalCents: updated.totalCents,
+          taxCents: updated.taxCents,
+          ocrResult: updated.ocrResult,
+          failureReason: updated.failureReason,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(expenseReceiptScans.id, id));
 
-    return this.recordMutation(context, {
-      entityName: "expense_receipt_scan",
-      eventName: "updated",
-      entityId: id,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "expense_receipt_scan",
+        eventName: "updated",
+        entityId: id,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 

@@ -1,8 +1,6 @@
 // Stage 10 Time Entries Service Purpose
-import { ExecuteStatementCommand, type SqlParameter } from "@aws-sdk/client-rds-data";
 import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
-import { createRawRdsDataClient, type StudioOsDatabase } from "../client";
-import { resolveDatabaseRuntimeConfig } from "../config";
+import type { StudioOsDatabase } from "../client";
 import { timeEntries, type TimeEntryScope } from "../schema";
 import { createUuid } from "../utils/uuid";
 import { BaseDomainService, type MutationContext } from "./base-service";
@@ -16,36 +14,7 @@ export type CreateTimeEntryInput = {
   readonly notes?: string | null;
 };
 
-const nullParam = (name: string): SqlParameter => ({
-  name,
-  value: {
-    isNull: true,
-  },
-});
-
-const stringParam = (name: string, value?: string | null): SqlParameter =>
-  value == null
-    ? nullParam(name)
-    : {
-        name,
-        value: {
-          stringValue: value,
-        },
-      };
-
-const longParam = (name: string, value?: number | null): SqlParameter =>
-  value == null
-    ? nullParam(name)
-    : {
-        name,
-        value: {
-          longValue: Math.trunc(value),
-        },
-      };
-
 export class TimeEntriesService extends BaseDomainService {
-  private readonly rdsClient = createRawRdsDataClient();
-
   public constructor(database: StudioOsDatabase) {
     super(database);
   }
@@ -71,59 +40,17 @@ export class TimeEntriesService extends BaseDomainService {
       version: 1,
     };
 
-    await this.executeStatement(
-      `
-        insert into time_entries (
-          id,
-          scope,
-          scope_id,
-          title,
-          started_at,
-          ended_at,
-          duration_minutes,
-          notes,
-          created_at,
-          updated_at,
-          deleted_at,
-          version
-        )
-        values (
-          cast(:id as uuid),
-          :scope,
-          cast(:scope_id as uuid),
-          :title,
-          cast(:started_at as timestamptz),
-          cast(:ended_at as timestamptz),
-          :duration_minutes,
-          :notes,
-          cast(:created_at as timestamptz),
-          cast(:updated_at as timestamptz),
-          null,
-          :version
-        )
-      `,
-      [
-        stringParam("id", inserted.id),
-        stringParam("scope", inserted.scope),
-        stringParam("scope_id", inserted.scopeId),
-        stringParam("title", inserted.title),
-        stringParam("started_at", inserted.startedAt.toISOString()),
-        stringParam("ended_at", inserted.endedAt?.toISOString() ?? null),
-        longParam("duration_minutes", inserted.durationMinutes),
-        stringParam("notes", inserted.notes),
-        stringParam("created_at", inserted.createdAt.toISOString()),
-        stringParam("updated_at", inserted.updatedAt.toISOString()),
-        longParam("version", inserted.version),
-      ],
-    );
+    return this.persistMutation(context, async (database) => {
+      await database.insert(timeEntries).values(inserted);
 
-    return this.recordMutation(context, {
-      entityName: "time_entry",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+      return {
+        entityName: "time_entry",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
   }
 
@@ -153,37 +80,27 @@ export class TimeEntriesService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.executeStatement(
-      `
-        update time_entries
-        set
-          title = :title,
-          ended_at = cast(:ended_at as timestamptz),
-          duration_minutes = :duration_minutes,
-          notes = :notes,
-          updated_at = cast(:updated_at as timestamptz),
-          version = :version
-        where id = cast(:id as uuid)
-          and deleted_at is null
-      `,
-      [
-        stringParam("id", id),
-        stringParam("title", updated.title),
-        stringParam("ended_at", updated.endedAt.toISOString()),
-        longParam("duration_minutes", updated.durationMinutes),
-        stringParam("notes", updated.notes),
-        stringParam("updated_at", updated.updatedAt.toISOString()),
-        longParam("version", updated.version),
-      ],
-    );
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(timeEntries)
+        .set({
+          title: updated.title,
+          endedAt: updated.endedAt,
+          durationMinutes: updated.durationMinutes,
+          notes: updated.notes,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(timeEntries.id, id));
 
-    return this.recordMutation(context, {
-      entityName: "time_entry",
-      eventName: "stopped",
-      entityId: id,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "time_entry",
+        eventName: "stopped",
+        entityId: id,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 
@@ -255,18 +172,5 @@ export class TimeEntriesService extends BaseDomainService {
 
   private calculateDurationMinutes(startedAt: Date, endedAt: Date) {
     return Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 60000));
-  }
-
-  private async executeStatement(statement: string, parameters: SqlParameter[]) {
-    const runtime = resolveDatabaseRuntimeConfig();
-    return this.rdsClient.send(
-      new ExecuteStatementCommand({
-        resourceArn: runtime.resourceArn,
-        secretArn: runtime.secretArn,
-        database: runtime.databaseName,
-        sql: statement,
-        parameters,
-      }),
-    );
   }
 }

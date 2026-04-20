@@ -141,15 +141,17 @@ export class SmartFilesService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(smartFiles).values(smartFile);
+    return this.persistMutation(context, async (database) => {
+      await database.insert(smartFiles).values(smartFile);
 
-    return this.recordMutation(context, {
-      entityName: "smart_file",
-      eventName: "created",
-      entityId: smartFile.id,
-      before: null,
-      after: smartFile,
-      result: smartFile,
+      return {
+        entityName: "smart_file",
+        eventName: "created",
+        entityId: smartFile.id,
+        before: null,
+        after: smartFile,
+        result: smartFile,
+      };
     });
   }
 
@@ -193,30 +195,32 @@ export class SmartFilesService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.database
-      .update(smartFiles)
-      .set({
-        status: updated.status,
-        sentAt: updated.sentAt,
-        viewedAt: updated.viewedAt,
-        completedAt: updated.completedAt,
-        auditSummary: updated.auditSummary,
-        responseData: updated.responseData,
-        pdfS3Key: updated.pdfS3Key,
-        lastPublicTokenAt: updated.lastPublicTokenAt,
-        lastPublicTokenExpiresAt: updated.lastPublicTokenExpiresAt,
-        updatedAt: updated.updatedAt,
-        version: updated.version,
-      })
-      .where(eq(smartFiles.id, id));
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(smartFiles)
+        .set({
+          status: updated.status,
+          sentAt: updated.sentAt,
+          viewedAt: updated.viewedAt,
+          completedAt: updated.completedAt,
+          auditSummary: updated.auditSummary,
+          responseData: updated.responseData,
+          pdfS3Key: updated.pdfS3Key,
+          lastPublicTokenAt: updated.lastPublicTokenAt,
+          lastPublicTokenExpiresAt: updated.lastPublicTokenExpiresAt,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(smartFiles.id, id));
 
-    return this.recordMutation(context, {
-      entityName: "smart_file",
-      eventName: "updated",
-      entityId: id,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "smart_file",
+        eventName: "updated",
+        entityId: id,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 

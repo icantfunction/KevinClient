@@ -55,15 +55,17 @@ export class SpacesService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(studioSpaces).values(inserted);
+    return this.persistMutation(context, async (database) => {
+      await database.insert(studioSpaces).values(inserted);
 
-    return this.recordMutation(context, {
-      entityName: "studio_space",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+      return {
+        entityName: "studio_space",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
   }
 
@@ -97,36 +99,38 @@ export class SpacesService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.database
-      .update(studioSpaces)
-      .set({
-        name: updated.name,
-        description: updated.description,
-        capacity: updated.capacity,
-        hourlyRateCents: updated.hourlyRateCents,
-        halfDayRateCents: updated.halfDayRateCents,
-        fullDayRateCents: updated.fullDayRateCents,
-        minBookingHours: updated.minBookingHours,
-        bufferMinutes: updated.bufferMinutes,
-        amenities: updated.amenities,
-        includedEquipment: updated.includedEquipment,
-        houseRules: updated.houseRules,
-        coverImageS3Key: updated.coverImageS3Key,
-        galleryImageS3Keys: updated.galleryImageS3Keys,
-        availabilityRules: updated.availabilityRules,
-        active: updated.active,
-        updatedAt: updated.updatedAt,
-        version: updated.version,
-      })
-      .where(eq(studioSpaces.id, id));
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(studioSpaces)
+        .set({
+          name: updated.name,
+          description: updated.description,
+          capacity: updated.capacity,
+          hourlyRateCents: updated.hourlyRateCents,
+          halfDayRateCents: updated.halfDayRateCents,
+          fullDayRateCents: updated.fullDayRateCents,
+          minBookingHours: updated.minBookingHours,
+          bufferMinutes: updated.bufferMinutes,
+          amenities: updated.amenities,
+          includedEquipment: updated.includedEquipment,
+          houseRules: updated.houseRules,
+          coverImageS3Key: updated.coverImageS3Key,
+          galleryImageS3Keys: updated.galleryImageS3Keys,
+          availabilityRules: updated.availabilityRules,
+          active: updated.active,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(studioSpaces.id, id));
 
-    return this.recordMutation(context, {
-      entityName: "studio_space",
-      eventName: "updated",
-      entityId: id,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "studio_space",
+        eventName: "updated",
+        entityId: id,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 

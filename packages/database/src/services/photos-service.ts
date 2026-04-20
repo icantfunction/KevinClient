@@ -97,45 +97,47 @@ export class PhotosService extends BaseDomainService {
       version: (existing?.version ?? 0) + 1,
     };
 
-    if (existing) {
-      await this.database
-        .update(photos)
-        .set({
-          originalS3Key: record.originalS3Key,
-          webS3Key: record.webS3Key,
-          thumbS3Key: record.thumbS3Key,
-          watermarkedS3Key: record.watermarkedS3Key,
-          sourceFilename: record.sourceFilename,
-          contentType: record.contentType,
-          width: record.width,
-          height: record.height,
-          fileSizeBytes: record.fileSizeBytes,
-          takenAt: record.takenAt,
-          cameraMake: record.cameraMake,
-          cameraModel: record.cameraModel,
-          lens: record.lens,
-          iso: record.iso,
-          aperture: record.aperture,
-          shutterSpeed: record.shutterSpeed,
-          focalLength: record.focalLength,
-          gpsCoords: record.gpsCoords,
-          colorLabels: record.colorLabels,
-          aiTags: record.aiTags,
-          updatedAt: record.updatedAt,
-          version: record.version,
-        })
-        .where(eq(photos.id, existing.id));
-    } else {
-      await this.database.insert(photos).values(record);
-    }
+    return this.persistMutation(context, async (database) => {
+      if (existing) {
+        await database
+          .update(photos)
+          .set({
+            originalS3Key: record.originalS3Key,
+            webS3Key: record.webS3Key,
+            thumbS3Key: record.thumbS3Key,
+            watermarkedS3Key: record.watermarkedS3Key,
+            sourceFilename: record.sourceFilename,
+            contentType: record.contentType,
+            width: record.width,
+            height: record.height,
+            fileSizeBytes: record.fileSizeBytes,
+            takenAt: record.takenAt,
+            cameraMake: record.cameraMake,
+            cameraModel: record.cameraModel,
+            lens: record.lens,
+            iso: record.iso,
+            aperture: record.aperture,
+            shutterSpeed: record.shutterSpeed,
+            focalLength: record.focalLength,
+            gpsCoords: record.gpsCoords,
+            colorLabels: record.colorLabels,
+            aiTags: record.aiTags,
+            updatedAt: record.updatedAt,
+            version: record.version,
+          })
+          .where(eq(photos.id, existing.id));
+      } else {
+        await database.insert(photos).values(record);
+      }
 
-    return this.recordMutation(context, {
-      entityName: "photo",
-      eventName: existing ? "updated" : "created",
-      entityId: nextId,
-      before: existing,
-      after: record,
-      result: record,
+      return {
+        entityName: "photo",
+        eventName: existing ? "updated" : "created",
+        entityId: nextId,
+        before: existing,
+        after: record,
+        result: record,
+      };
     });
   }
 }

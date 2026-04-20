@@ -63,14 +63,17 @@ export class PaymentsService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(payments).values(inserted);
-    const payment = await this.recordMutation(context, {
-      entityName: "payment",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+    const payment = await this.persistMutation(context, async (database) => {
+      await database.insert(payments).values(inserted);
+
+      return {
+        entityName: "payment",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
 
     await this.invoicesService.applyPayment(
@@ -107,14 +110,17 @@ export class PaymentsService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(payments).values(inserted);
-    const payment = await this.recordMutation(context, {
-      entityName: "payment",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+    const payment = await this.persistMutation(context, async (database) => {
+      await database.insert(payments).values(inserted);
+
+      return {
+        entityName: "payment",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
 
     await this.invoicesService.applyRefund(input.invoiceId, amountCents, context, {

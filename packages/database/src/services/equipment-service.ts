@@ -50,15 +50,17 @@ export class EquipmentService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(studioEquipment).values(inserted);
+    return this.persistMutation(context, async (database) => {
+      await database.insert(studioEquipment).values(inserted);
 
-    return this.recordMutation(context, {
-      entityName: "studio_equipment",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+      return {
+        entityName: "studio_equipment",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
   }
 
@@ -90,32 +92,34 @@ export class EquipmentService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.database
-      .update(studioEquipment)
-      .set({
-        name: updated.name,
-        description: updated.description,
-        hourlyRateCents: updated.hourlyRateCents,
-        dailyRateCents: updated.dailyRateCents,
-        replacementCostCents: updated.replacementCostCents,
-        quantityOwned: updated.quantityOwned,
-        quantityAvailable: updated.quantityAvailable,
-        conditionNotes: updated.conditionNotes,
-        lastServicedAt: updated.lastServicedAt,
-        images: updated.images,
-        active: updated.active,
-        updatedAt: updated.updatedAt,
-        version: updated.version,
-      })
-      .where(eq(studioEquipment.id, id));
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(studioEquipment)
+        .set({
+          name: updated.name,
+          description: updated.description,
+          hourlyRateCents: updated.hourlyRateCents,
+          dailyRateCents: updated.dailyRateCents,
+          replacementCostCents: updated.replacementCostCents,
+          quantityOwned: updated.quantityOwned,
+          quantityAvailable: updated.quantityAvailable,
+          conditionNotes: updated.conditionNotes,
+          lastServicedAt: updated.lastServicedAt,
+          images: updated.images,
+          active: updated.active,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(studioEquipment.id, id));
 
-    return this.recordMutation(context, {
-      entityName: "studio_equipment",
-      eventName: "updated",
-      entityId: id,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "studio_equipment",
+        eventName: "updated",
+        entityId: id,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 

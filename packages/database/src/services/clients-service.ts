@@ -108,15 +108,17 @@ export class ClientsService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(clients).values(inserted);
+    return this.persistMutation(context, async (database) => {
+      await database.insert(clients).values(inserted);
 
-    return this.recordMutation(context, {
-      entityName: "client",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+      return {
+        entityName: "client",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
   }
 

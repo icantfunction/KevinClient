@@ -64,15 +64,17 @@ export class GalleriesService extends BaseDomainService {
       inserted.downloadPin = input.downloadPin;
     }
 
-    await this.database.insert(galleries).values(inserted);
+    return this.persistMutation(context, async (database) => {
+      await database.insert(galleries).values(inserted);
 
-    return this.recordMutation(context, {
-      entityName: "gallery",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+      return {
+        entityName: "gallery",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
   }
 
@@ -127,29 +129,31 @@ export class GalleriesService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.database
-      .update(galleries)
-      .set({
-        coverPhotoId: updated.coverPhotoId,
-        status: updated.status,
-        processedPhotoCount: updated.processedPhotoCount,
-        deliveredAt: updated.deliveredAt,
-        expiresAt: updated.expiresAt,
-        lastViewedAt: updated.lastViewedAt,
-        viewCount: updated.viewCount,
-        uniqueVisitorCount: updated.uniqueVisitorCount,
-        updatedAt: updated.updatedAt,
-        version: updated.version,
-      })
-      .where(eq(galleries.id, id));
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(galleries)
+        .set({
+          coverPhotoId: updated.coverPhotoId,
+          status: updated.status,
+          processedPhotoCount: updated.processedPhotoCount,
+          deliveredAt: updated.deliveredAt,
+          expiresAt: updated.expiresAt,
+          lastViewedAt: updated.lastViewedAt,
+          viewCount: updated.viewCount,
+          uniqueVisitorCount: updated.uniqueVisitorCount,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(galleries.id, id));
 
-    return this.recordMutation(context, {
-      entityName: "gallery",
-      eventName: "updated",
-      entityId: id,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "gallery",
+        eventName: "updated",
+        entityId: id,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 
@@ -160,34 +164,36 @@ export class GalleriesService extends BaseDomainService {
     }
 
     const occurredAt = context.occurredAt ?? new Date();
-    const rows = await this.database
-      .update(galleries)
-      .set({
-        processedPhotoCount: sql<number>`${galleries.processedPhotoCount} + 1`,
-        status: sql<GalleryStatus>`case
-          when ${galleries.expectedPhotoCount} > 0
-            and ${galleries.processedPhotoCount} + 1 >= ${galleries.expectedPhotoCount}
-          then 'ready'
-          else ${galleries.status}
-        end`,
-        updatedAt: occurredAt,
-        version: sql<number>`${galleries.version} + 1`,
-      })
-      .where(and(eq(galleries.id, id), isNull(galleries.deletedAt)))
-      .returning();
+    return this.persistMutation(context, async (database) => {
+      const rows = await database
+        .update(galleries)
+        .set({
+          processedPhotoCount: sql<number>`${galleries.processedPhotoCount} + 1`,
+          status: sql<GalleryStatus>`case
+            when ${galleries.expectedPhotoCount} > 0
+              and ${galleries.processedPhotoCount} + 1 >= ${galleries.expectedPhotoCount}
+            then 'ready'
+            else ${galleries.status}
+          end`,
+          updatedAt: occurredAt,
+          version: sql<number>`${galleries.version} + 1`,
+        })
+        .where(and(eq(galleries.id, id), isNull(galleries.deletedAt)))
+        .returning();
 
-    const updated = rows[0];
-    if (!updated) {
-      throw new Error(`Gallery ${id} was not found.`);
-    }
+      const updated = rows[0];
+      if (!updated) {
+        throw new Error(`Gallery ${id} was not found.`);
+      }
 
-    return this.recordMutation(context, {
-      entityName: "gallery",
-      eventName: "updated",
-      entityId: id,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "gallery",
+        eventName: "updated",
+        entityId: id,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 

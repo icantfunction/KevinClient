@@ -3,6 +3,7 @@ export * from "./activities";
 export * from "./audit-log";
 export * from "./clients";
 export * from "./common";
+export * from "./event-outbox";
 export * from "./financial";
 export * from "./galleries";
 export * from "./inquiries";

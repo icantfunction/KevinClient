@@ -5,6 +5,8 @@ import { resolveDatabaseRuntimeConfig } from "./config";
 import * as schema from "./schema/index";
 
 export type StudioOsDatabase = AwsDataApiPgDatabase<typeof schema>;
+export type StudioOsTransaction = Parameters<Parameters<StudioOsDatabase["transaction"]>[0]>[0];
+export type StudioOsDatabaseExecutor = StudioOsDatabase | StudioOsTransaction;
 
 let cachedDatabase: StudioOsDatabase | undefined;
 let cachedRdsClient: RDSDataClient | undefined;

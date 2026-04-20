@@ -42,15 +42,17 @@ export class ShotListsService extends BaseDomainService {
         version: 1,
       };
 
-      await this.database.insert(shotLists).values(inserted);
+      return this.persistMutation(context, async (database) => {
+        await database.insert(shotLists).values(inserted);
 
-      return this.recordMutation(context, {
-        entityName: "shot_list",
-        eventName: "created",
-        entityId: inserted.id,
-        before: null,
-        after: inserted,
-        result: inserted,
+        return {
+          entityName: "shot_list",
+          eventName: "created",
+          entityId: inserted.id,
+          before: null,
+          after: inserted,
+          result: inserted,
+        };
       });
     }
 
@@ -62,23 +64,25 @@ export class ShotListsService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.database
-      .update(shotLists)
-      .set({
-        items: updated.items,
-        notes: updated.notes,
-        updatedAt: updated.updatedAt,
-        version: updated.version,
-      })
-      .where(eq(shotLists.id, existing.id));
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(shotLists)
+        .set({
+          items: updated.items,
+          notes: updated.notes,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(shotLists.id, existing.id));
 
-    return this.recordMutation(context, {
-      entityName: "shot_list",
-      eventName: "updated",
-      entityId: existing.id,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "shot_list",
+        eventName: "updated",
+        entityId: existing.id,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 }

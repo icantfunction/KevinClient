@@ -1,6 +1,7 @@
 // Stage 9 Events Stack Purpose
 import * as path from "node:path";
 import * as cdk from "aws-cdk-lib";
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as logs from "aws-cdk-lib/aws-logs";
@@ -75,6 +76,13 @@ export class StudioOsEventsStack extends cdk.Stack {
       "RecurringTaskSpawnerFunction",
       "lambda/events-recurring-task-spawner/index.ts",
     );
+    const auditPartitionPrecreateFunction = createNodeFunction(
+      "AuditPartitionPrecreateFunction",
+      "lambda/events-audit-partition-precreate/index.ts",
+    );
+    const outboxPublisherFunction = createNodeFunction("OutboxPublisherFunction", "lambda/events-outbox-publisher/index.ts", {
+      STUDIO_OS_OUTBOX_BATCH_SIZE: "100",
+    });
 
     const functions = [
       sequenceRunnerFunction,
@@ -85,6 +93,8 @@ export class StudioOsEventsStack extends cdk.Stack {
       anniversaryRemindersFunction,
       monthlyReportsFunction,
       recurringTaskSpawnerFunction,
+      auditPartitionPrecreateFunction,
+      outboxPublisherFunction,
     ];
 
     functions.forEach((functionResource) => {
@@ -137,5 +147,42 @@ export class StudioOsEventsStack extends cdk.Stack {
     createSchedule("AnniversaryRemindersSchedule", "cron(30 9 * * ? *)", anniversaryRemindersFunction);
     createSchedule("MonthlyReportsSchedule", "cron(0 9 1 * ? *)", monthlyReportsFunction);
     createSchedule("RecurringTaskSpawnerSchedule", "cron(0 6 * * ? *)", recurringTaskSpawnerFunction);
+    createSchedule("AuditPartitionPrecreateSchedule", "cron(0 2 25 * ? *)", auditPartitionPrecreateFunction);
+    createSchedule("OutboxPublisherSchedule", "rate(1 minute)", outboxPublisherFunction);
+
+    const outboxMetricDimensions = {
+      Stage: props.stageConfig.stageName,
+      Function: "OutboxPublisher",
+    };
+
+    new cloudwatch.Alarm(this, "OutboxRetryExceededAlarm", {
+      metric: new cloudwatch.Metric({
+        namespace: "StudioOs/Events",
+        metricName: "OutboxFailedRows",
+        dimensionsMap: outboxMetricDimensions,
+        statistic: "Maximum",
+        period: cdk.Duration.minutes(1),
+      }),
+      evaluationPeriods: 1,
+      threshold: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      alarmDescription: "At least one outbox row has exceeded five publish attempts.",
+    });
+
+    new cloudwatch.Alarm(this, "OutboxStaleAlarm", {
+      metric: new cloudwatch.Metric({
+        namespace: "StudioOs/Events",
+        metricName: "OutboxOldestUnpublishedAgeSeconds",
+        dimensionsMap: outboxMetricDimensions,
+        statistic: "Maximum",
+        period: cdk.Duration.minutes(1),
+      }),
+      evaluationPeriods: 1,
+      threshold: 300,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      alarmDescription: "The oldest unpublished outbox row is older than five minutes.",
+    });
   }
 }

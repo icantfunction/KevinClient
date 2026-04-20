@@ -57,15 +57,17 @@ export class ActivitiesService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(activities).values(inserted);
+    return this.persistMutation(context, async (database) => {
+      await database.insert(activities).values(inserted);
 
-    return this.recordMutation(context, {
-      entityName: "activity",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+      return {
+        entityName: "activity",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
   }
 

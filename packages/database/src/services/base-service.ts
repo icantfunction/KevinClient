@@ -1,7 +1,8 @@
 // Stage 2 Base Service Purpose
-import type { StudioOsDatabase } from "../client";
-import { publishDomainMutationEvent } from "../events/publisher";
+import type { StudioOsDatabase, StudioOsDatabaseExecutor } from "../client";
+import { createUuid } from "../utils/uuid";
 import { AuditLogService } from "./audit-log-service";
+import { EventOutboxService } from "./event-outbox-service";
 
 export type MutationContext = {
   readonly actor: string;
@@ -19,14 +20,17 @@ export type MutationEnvelope<TRecord extends Record<string, unknown>> = {
 
 export class BaseDomainService {
   protected readonly auditLogService: AuditLogService;
+  protected readonly eventOutboxService: EventOutboxService;
 
   public constructor(protected readonly database: StudioOsDatabase) {
     this.auditLogService = new AuditLogService(database);
+    this.eventOutboxService = new EventOutboxService(database);
   }
 
   protected async recordMutation<TRecord extends Record<string, unknown>>(
     context: MutationContext,
     envelope: MutationEnvelope<TRecord>,
+    executor: StudioOsDatabaseExecutor = this.database,
   ): Promise<TRecord> {
     const occurredAt = context.occurredAt ?? new Date();
 
@@ -38,18 +42,41 @@ export class BaseDomainService {
       loggedAt: occurredAt,
       before: envelope.before,
       after: envelope.after,
-    });
+    }, executor);
 
-    await publishDomainMutationEvent({
-      entityName: envelope.entityName,
-      eventName: envelope.eventName,
-      entityId: envelope.entityId,
-      actor: context.actor,
-      occurredAt: occurredAt.toISOString(),
-      before: envelope.before,
-      after: envelope.after,
-    });
+    const eventId = createUuid();
+    await this.eventOutboxService.enqueue(
+      {
+        id: eventId,
+        entityType: envelope.entityName,
+        entityId: envelope.entityId,
+        eventName: envelope.eventName,
+        detail: {
+          eventId,
+          entityName: envelope.entityName,
+          eventName: envelope.eventName,
+          entityId: envelope.entityId,
+          actor: context.actor,
+          occurredAt: occurredAt.toISOString(),
+          before: envelope.before,
+          after: envelope.after,
+        },
+        createdAt: occurredAt,
+      },
+      executor,
+    );
 
     return envelope.result;
+  }
+
+  protected async persistMutation<TRecord extends Record<string, unknown>>(
+    context: MutationContext,
+    operation: (executor: StudioOsDatabaseExecutor) => Promise<MutationEnvelope<TRecord>>,
+  ): Promise<TRecord> {
+    return this.database.transaction(async (transaction) => {
+      const envelope = await operation(transaction);
+      await this.recordMutation(context, envelope, transaction);
+      return envelope.result;
+    });
   }
 }

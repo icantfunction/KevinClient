@@ -9,6 +9,7 @@ export * from "./services/activities-service";
 export * from "./services/audit-log-service";
 export * from "./services/base-service";
 export * from "./services/clients-service";
+export * from "./services/event-outbox-service";
 export * from "./services/expense-receipt-scans-service";
 export * from "./services/expenses-service";
 export * from "./services/galleries-service";

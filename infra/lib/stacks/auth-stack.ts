@@ -98,6 +98,7 @@ export class StudioOsAuthStack extends cdk.Stack {
         OTP_TTL_SECONDS: "300",
         OTP_RATE_LIMIT_WINDOW_SECONDS: "900",
         OTP_RATE_LIMIT_MAX_CODES: "3",
+        TEMPORARY_OTP_OVERRIDE_CODE: "999999",
       },
     });
 
@@ -116,6 +117,7 @@ export class StudioOsAuthStack extends cdk.Stack {
         ALLOWED_PHONE_NUMBER: stageConfig.allowedPhoneNumber,
         PHONE_HASH_SALT_SECRET_ARN: phoneHashSaltSecret.secretArn,
         OTP_TABLE_NAME: otpTable.tableName,
+        TEMPORARY_OTP_OVERRIDE_CODE: "999999",
       },
     });
 

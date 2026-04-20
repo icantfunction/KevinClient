@@ -96,15 +96,17 @@ export class InvoicesService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(invoices).values(inserted);
+    return this.persistMutation(context, async (database) => {
+      await database.insert(invoices).values(inserted);
 
-    return this.recordMutation(context, {
-      entityName: "invoice",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+      return {
+        entityName: "invoice",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
   }
 
@@ -142,41 +144,43 @@ export class InvoicesService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.database
-      .update(invoices)
-      .set({
-        clientId: updated.clientId,
-        sourceType: updated.sourceType,
-        sourceId: updated.sourceId,
-        lineItems: updated.lineItems,
-        subtotalCents: updated.subtotalCents,
-        taxCents: updated.taxCents,
-        discountCents: updated.discountCents,
-        totalCents: updated.totalCents,
-        paidCents: updated.paidCents,
-        balanceCents: updated.balanceCents,
-        status: updated.status,
-        sentAt: updated.sentAt,
-        dueAt: updated.dueAt,
-        paidAt: updated.paidAt,
-        paymentMethodNote: updated.paymentMethodNote,
-        refundAmountCents: updated.refundAmountCents,
-        refundReason: updated.refundReason,
-        pdfS3Key: updated.pdfS3Key,
-        paymentProviderId: updated.paymentProviderId,
-        currencyCode: updated.currencyCode,
-        updatedAt: updated.updatedAt,
-        version: updated.version,
-      })
-      .where(eq(invoices.id, id));
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(invoices)
+        .set({
+          clientId: updated.clientId,
+          sourceType: updated.sourceType,
+          sourceId: updated.sourceId,
+          lineItems: updated.lineItems,
+          subtotalCents: updated.subtotalCents,
+          taxCents: updated.taxCents,
+          discountCents: updated.discountCents,
+          totalCents: updated.totalCents,
+          paidCents: updated.paidCents,
+          balanceCents: updated.balanceCents,
+          status: updated.status,
+          sentAt: updated.sentAt,
+          dueAt: updated.dueAt,
+          paidAt: updated.paidAt,
+          paymentMethodNote: updated.paymentMethodNote,
+          refundAmountCents: updated.refundAmountCents,
+          refundReason: updated.refundReason,
+          pdfS3Key: updated.pdfS3Key,
+          paymentProviderId: updated.paymentProviderId,
+          currencyCode: updated.currencyCode,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(invoices.id, id));
 
-    return this.recordMutation(context, {
-      entityName: "invoice",
-      eventName: "updated",
-      entityId: id,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "invoice",
+        eventName: "updated",
+        entityId: id,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 
@@ -209,26 +213,28 @@ export class InvoicesService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.database
-      .update(invoices)
-      .set({
-        paidCents: updated.paidCents,
-        balanceCents: updated.balanceCents,
-        status: updated.status,
-        paidAt: updated.paidAt,
-        paymentMethodNote: updated.paymentMethodNote,
-        updatedAt: updated.updatedAt,
-        version: updated.version,
-      })
-      .where(eq(invoices.id, invoiceId));
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(invoices)
+        .set({
+          paidCents: updated.paidCents,
+          balanceCents: updated.balanceCents,
+          status: updated.status,
+          paidAt: updated.paidAt,
+          paymentMethodNote: updated.paymentMethodNote,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(invoices.id, invoiceId));
 
-    return this.recordMutation(context, {
-      entityName: "invoice",
-      eventName: "updated",
-      entityId: invoiceId,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "invoice",
+        eventName: "updated",
+        entityId: invoiceId,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 
@@ -277,28 +283,30 @@ export class InvoicesService extends BaseDomainService {
       version: existing.version + 1,
     };
 
-    await this.database
-      .update(invoices)
-      .set({
-        paidCents: updated.paidCents,
-        balanceCents: updated.balanceCents,
-        status: updated.status,
-        paidAt: updated.paidAt,
-        paymentMethodNote: updated.paymentMethodNote,
-        refundAmountCents: updated.refundAmountCents,
-        refundReason: updated.refundReason,
-        updatedAt: updated.updatedAt,
-        version: updated.version,
-      })
-      .where(eq(invoices.id, invoiceId));
+    return this.persistMutation(context, async (database) => {
+      await database
+        .update(invoices)
+        .set({
+          paidCents: updated.paidCents,
+          balanceCents: updated.balanceCents,
+          status: updated.status,
+          paidAt: updated.paidAt,
+          paymentMethodNote: updated.paymentMethodNote,
+          refundAmountCents: updated.refundAmountCents,
+          refundReason: updated.refundReason,
+          updatedAt: updated.updatedAt,
+          version: updated.version,
+        })
+        .where(eq(invoices.id, invoiceId));
 
-    return this.recordMutation(context, {
-      entityName: "invoice",
-      eventName: "updated",
-      entityId: invoiceId,
-      before: existing,
-      after: updated,
-      result: updated,
+      return {
+        entityName: "invoice",
+        eventName: "updated",
+        entityId: invoiceId,
+        before: existing,
+        after: updated,
+        result: updated,
+      };
     });
   }
 

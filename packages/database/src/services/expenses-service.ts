@@ -61,15 +61,17 @@ export class ExpensesService extends BaseDomainService {
       version: 1,
     };
 
-    await this.database.insert(expenses).values(inserted);
+    return this.persistMutation(context, async (database) => {
+      await database.insert(expenses).values(inserted);
 
-    return this.recordMutation(context, {
-      entityName: "expense",
-      eventName: "created",
-      entityId: inserted.id,
-      before: null,
-      after: inserted,
-      result: inserted,
+      return {
+        entityName: "expense",
+        eventName: "created",
+        entityId: inserted.id,
+        before: null,
+        after: inserted,
+        result: inserted,
+      };
     });
   }
 
