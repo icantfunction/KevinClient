@@ -2,10 +2,10 @@
 "use client";
 
 import {
+  useCallback,
   createContext,
   useContext,
   useEffect,
-  useEffectEvent,
   useMemo,
   useState,
   type PropsWithChildren,
@@ -25,6 +25,30 @@ type AuthSession = {
 };
 
 const demoStorageKey = "studio-os-admin-demo-mode-v1";
+
+const sanitizeNextPath = (value: string | null): string | null => {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return null;
+  }
+
+  return value;
+};
+
+const redirectToPostAuthDestination = () => {
+  if (typeof window === "undefined" || window.location.pathname !== "/") {
+    return false;
+  }
+
+  const nextPath = sanitizeNextPath(
+    new URLSearchParams(window.location.search).get("next"),
+  );
+  if (!nextPath) {
+    return false;
+  }
+
+  window.location.replace(nextPath);
+  return true;
+};
 
 const isDemoModeActive = (): boolean => {
   if (typeof window === "undefined") {
@@ -181,15 +205,19 @@ export function StudioOsAuthProvider({ children }: PropsWithChildren) {
       const nextSession = makeDemoSession();
       setSession(nextSession);
       setStatus("authenticated");
+      redirectToPostAuthDestination();
       return;
     }
 
     const storedSession = loadSession();
     setSession(storedSession);
     setStatus(storedSession ? "authenticated" : "signed_out");
+    if (storedSession) {
+      redirectToPostAuthDestination();
+    }
   }, []);
 
-  const refreshSession = useEffectEvent(async () => {
+  const refreshSession = useCallback(async () => {
     if (!session?.refreshToken) {
       throw new Error("Refresh token is missing.");
     }
@@ -219,9 +247,9 @@ export function StudioOsAuthProvider({ children }: PropsWithChildren) {
     persistSession(refreshedSession);
     setStatus("authenticated");
     return refreshedSession;
-  });
+  }, [session]);
 
-  const requestCode = useEffectEvent(async (phoneNumber: string) => {
+  const requestCode = useCallback(async (phoneNumber: string) => {
     setIsWorking(true);
     setErrorMessage(null);
 
@@ -242,13 +270,12 @@ export function StudioOsAuthProvider({ children }: PropsWithChildren) {
       setStatus("challenge");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to send the code.");
-      throw error;
     } finally {
       setIsWorking(false);
     }
-  });
+  }, []);
 
-  const verifyCode = useEffectEvent(async (otpCode: string) => {
+  const verifyCode = useCallback(async (otpCode: string) => {
     if (!challenge) {
       throw new Error("Request a code before verifying.");
     }
@@ -277,15 +304,15 @@ export function StudioOsAuthProvider({ children }: PropsWithChildren) {
       persistSession(nextSession);
       setChallenge(null);
       setStatus("authenticated");
+      redirectToPostAuthDestination();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to verify the code.");
-      throw error;
     } finally {
       setIsWorking(false);
     }
-  });
+  }, [challenge]);
 
-  const logout = useEffectEvent(() => {
+  const logout = useCallback(() => {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(demoStorageKey);
     }
@@ -295,9 +322,9 @@ export function StudioOsAuthProvider({ children }: PropsWithChildren) {
     setStatus("signed_out");
     setErrorMessage(null);
     persistSession(null);
-  });
+  }, []);
 
-  const authorizedFetch = useEffectEvent(async (path: string, init: RequestInit = {}) => {
+  const authorizedFetch = useCallback(async (path: string, init: RequestInit = {}) => {
     if (session?.demoMode) {
       return demoResponse(path);
     }
@@ -334,7 +361,7 @@ export function StudioOsAuthProvider({ children }: PropsWithChildren) {
     }
 
     return response;
-  });
+  }, [logout, refreshSession, session]);
 
   const contextValue = useMemo<StudioOsAuthContextValue>(
     () => ({

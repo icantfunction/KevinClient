@@ -640,6 +640,27 @@ export class StudioOsApiStack extends cdk.Stack {
     const api = new apigwv2.HttpApi(this, "HttpApi", {
       apiName: `${props.stageConfig.prefix}-http-api`,
       createDefaultStage: true,
+      corsPreflight: {
+        allowOrigins: props.stageConfig.adminAppOrigins,
+        allowHeaders: [
+          "authorization",
+          "content-type",
+          "idempotency-key",
+          "x-amz-date",
+          "x-amz-security-token",
+          "x-api-key",
+        ],
+        allowMethods: [
+          apigwv2.CorsHttpMethod.GET,
+          apigwv2.CorsHttpMethod.POST,
+          apigwv2.CorsHttpMethod.PUT,
+          apigwv2.CorsHttpMethod.PATCH,
+          apigwv2.CorsHttpMethod.DELETE,
+          apigwv2.CorsHttpMethod.OPTIONS,
+        ],
+        exposeHeaders: ["content-type"],
+        maxAge: cdk.Duration.minutes(10),
+      },
     });
 
     issueCalendarFeedTokenFunction.addEnvironment("STUDIO_OS_API_URL", api.url ?? "");

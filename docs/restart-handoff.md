@@ -36,6 +36,18 @@ the Next.js app in `src/`.
 - Mobile shot list and studio check-in pages were fully reskinned.
 - `/studio` reference page reskinned to match.
 
+## Local follow-up after the UI redesign
+
+- On `2026-04-20`, the Stage 1 HTTP API was updated to enable API Gateway
+  CORS preflight for the admin frontend.
+- Verified live: `OPTIONS /dashboard` now returns `204` with
+  `Access-Control-Allow-Origin: https://main.d2pc7jrka8vz5q.amplifyapp.com`
+  instead of `404`.
+- The allowlist currently includes the production Amplify domain plus local
+  dev origins (`localhost` / `127.0.0.1` on ports `3000` and `3001`).
+- If Kevin starts using additional Amplify preview domains, add them via
+  `STUDIO_OS_ADMIN_APP_ORIGINS` before deploying again.
+
 Relevant files:
 
 - [src/components/studio-os-app.tsx](C:/Users/dramo/KevinClient/src/components/studio-os-app.tsx:1)

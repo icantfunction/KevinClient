@@ -31,4 +31,47 @@ export const foldedStudioSource = {
       description: "Intimate teaching sessions, interviews, and creator meetups in a controlled space.",
     },
   ],
+  contact: {
+    bookingEmail: "book@kevinscreatorstudio.com",
+    inquiryEmail: "hello@kevinscreatorstudio.com",
+    phone: "+1 (954) 854-1484",
+    smsLine: "+1 (954) 854-1484",
+    address: {
+      street: "Studio address shared after booking",
+      cityLine: "Coconut Creek, FL",
+    },
+    serviceArea: "Broward, Palm Beach, and Miami-Dade — South Florida.",
+  },
+  hours: [
+    { day: "Mon – Fri", windows: ["8:00 AM – 9:00 PM"] },
+    { day: "Saturday", windows: ["9:00 AM – 8:00 PM"] },
+    { day: "Sunday", windows: ["By appointment"] },
+  ],
+  bookingNotes: [
+    "All bookings include a 30-minute reset buffer at the start and end.",
+    "A 25% deposit holds your slot. Balance due on the day of the shoot.",
+    "Reschedules with 48 hours notice incur no fee.",
+  ],
+  faq: [
+    {
+      question: "Is parking included?",
+      answer:
+        "Yes — free on-site parking for up to 6 vehicles. Larger crews can use the lot across the street.",
+    },
+    {
+      question: "Can I bring my own lighting and gear?",
+      answer:
+        "Absolutely. The space is C-stand and grip-friendly with plenty of power. House lighting is also available at no extra cost.",
+    },
+    {
+      question: "Do you allow food, drinks, and pets?",
+      answer:
+        "Food and drinks are welcome — we'll show you the kitchenette. Pets are welcome for shoots; just let us know in advance so we can prep the space.",
+    },
+    {
+      question: "What is your cancellation policy?",
+      answer:
+        "Reschedules made at least 48 hours before your booking are free. Cancellations inside 48 hours forfeit the deposit but credit toward a future booking within 90 days.",
+    },
+  ],
 };

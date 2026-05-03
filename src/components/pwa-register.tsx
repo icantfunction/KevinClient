@@ -9,8 +9,17 @@ export default function PwaRegister() {
       return;
     }
 
+    if (process.env.NODE_ENV !== "production") {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          void registration.unregister();
+        });
+      });
+      return;
+    }
+
     navigator.serviceWorker.register("/sw.js").catch(() => {
-      // Service worker registration is best-effort for local/dev installs.
+      // Service worker registration is best-effort in production.
     });
   }, []);
 

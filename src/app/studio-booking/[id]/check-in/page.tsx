@@ -2,12 +2,17 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import {
   StudioOsAuthProvider,
   useStudioOsAuth,
 } from "@/components/studio-os-auth-provider";
+import {
+  StudioOsAuthRequiredScreen,
+  StudioOsLoadingScreen,
+} from "@/components/studio-os-state-screens";
+import { readJsonResponse } from "@/lib/http";
 
 const requestKey = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -37,46 +42,102 @@ const statusPill = (status?: string | null) => {
   return "bg-slate-500/20 text-slate-200 ring-slate-400/30";
 };
 
+type BookingRecord = Record<string, unknown> & {
+  readonly status?: string;
+  readonly purpose?: string;
+  readonly bookingStart?: string;
+  readonly bookingEnd?: string;
+  readonly accessCode?: string;
+  readonly depositPaid?: boolean;
+  readonly spaceId?: string;
+  readonly spaceName?: string;
+  readonly spaceLabel?: string;
+  readonly checkinAt?: string;
+  readonly checkoutAt?: string;
+};
+
+type BookingPayload = {
+  readonly booking?: BookingRecord | null;
+};
+
+const humanizeIdentifier = (value?: string | null) =>
+  String(value ?? "—")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+
 function BookingCheckInScreen() {
   const { id } = useParams<{ id: string }>();
+  const pathname = usePathname();
   const { status, authorizedFetch } = useStudioOsAuth();
-  const [booking, setBooking] = useState<Record<string, any> | null>(null);
+  const [booking, setBooking] = useState<BookingRecord | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
 
-  const loadBooking = async () => {
-    const response = await authorizedFetch(`/studio/bookings/${id}`);
-    const payload = await response.json();
+  const loadBooking = useCallback(async () => {
+    setMessage(null);
+    const payload = await readJsonResponse<BookingPayload>(
+      await authorizedFetch(`/studio/bookings/${id}`),
+      "Unable to load this booking.",
+    );
     setBooking(payload.booking ?? null);
-  };
+  }, [authorizedFetch, id]);
 
   useEffect(() => {
     if (status === "authenticated" && id) {
-      void loadBooking();
+      void loadBooking().catch((error) =>
+        setMessage(
+          error instanceof Error ? error.message : "Unable to load booking.",
+        ),
+      );
     }
-  }, [id, status]);
+  }, [id, loadBooking, status]);
 
   const updateBooking = async (patch: Record<string, unknown>) => {
     setWorking(true);
+    setMessage(null);
     try {
-      const response = await authorizedFetch(`/studio/bookings/${id}`, {
-        method: "PATCH",
-        headers: {
-          "content-type": "application/json",
-          "Idempotency-Key": requestKey(),
-        },
-        body: JSON.stringify(patch),
-      });
-
-      const payload = await response.json();
+      const payload = await readJsonResponse<BookingPayload>(
+        await authorizedFetch(`/studio/bookings/${id}`, {
+          method: "PATCH",
+          headers: {
+            "content-type": "application/json",
+            "Idempotency-Key": requestKey(),
+          },
+          body: JSON.stringify(patch),
+        }),
+        "Unable to update this booking.",
+      );
       setBooking(payload.booking ?? null);
-      setMessage(response.ok ? "Booking updated." : "Unable to update booking.");
+      setMessage("Booking updated.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Unable to update booking.",
+      );
     } finally {
       setWorking(false);
     }
   };
 
   const bookingStatus = String(booking?.status ?? "loading");
+
+  if (status === "booting") {
+    return (
+      <StudioOsLoadingScreen
+        title="Loading booking check-in"
+        description="Checking your booking access."
+      />
+    );
+  }
+
+  if (status !== "authenticated") {
+    return (
+      <StudioOsAuthRequiredScreen
+        href={`/?next=${encodeURIComponent(pathname)}`}
+        title="Sign in to manage this booking"
+        description="Studio check-in links require Studio OS authentication."
+      />
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 pb-10 text-slate-100">
@@ -130,7 +191,11 @@ function BookingCheckInScreen() {
                 Space
               </p>
               <p className="mt-0.5 font-semibold">
-                {String(booking?.spaceId ?? "—")}
+                {String(
+                  booking?.spaceName ??
+                    booking?.spaceLabel ??
+                    humanizeIdentifier(booking?.spaceId),
+                )}
               </p>
             </div>
             <div className="rounded-xl bg-white/5 px-3 py-2.5">
@@ -194,6 +259,74 @@ function BookingCheckInScreen() {
             {message}
           </section>
         ) : null}
+
+        <section className="rounded-[1.4rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            What to know
+          </p>
+          <h2 className="mt-1 font-serif text-xl text-slate-50">
+            On-site essentials
+          </h2>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl bg-white/5 px-3.5 py-3">
+              <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Wi-Fi
+              </dt>
+              <dd className="mt-1 text-sm leading-5 text-slate-100">
+                <span className="font-mono">KevinStudio_5G</span>
+                <br />
+                <span className="text-slate-400">Password texted with access code.</span>
+              </dd>
+            </div>
+            <div className="rounded-xl bg-white/5 px-3.5 py-3">
+              <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Parking
+              </dt>
+              <dd className="mt-1 text-sm leading-5 text-slate-100">
+                Free on-site, up to 6 spots. Overflow lot across the street.
+              </dd>
+            </div>
+            <div className="rounded-xl bg-white/5 px-3.5 py-3">
+              <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Entry
+              </dt>
+              <dd className="mt-1 text-sm leading-5 text-slate-100">
+                Use the access code above on the side-door keypad. Door auto-locks after 30s.
+              </dd>
+            </div>
+            <div className="rounded-xl bg-white/5 px-3.5 py-3">
+              <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Climate
+              </dt>
+              <dd className="mt-1 text-sm leading-5 text-slate-100">
+                Thermostat in the prep zone. Please leave it at 72°F when you check out.
+              </dd>
+            </div>
+            <div className="rounded-xl bg-white/5 px-3.5 py-3">
+              <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Reset before leaving
+              </dt>
+              <dd className="mt-1 text-sm leading-5 text-slate-100">
+                Furniture back to the floor marks. Bag any trash and drop in the bin behind the door.
+              </dd>
+            </div>
+            <div className="rounded-xl bg-white/5 px-3.5 py-3">
+              <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Need Kevin?
+              </dt>
+              <dd className="mt-1 text-sm leading-5 text-slate-100">
+                <a
+                  href="tel:+19548541484"
+                  className="text-amber-200 underline-offset-4 hover:underline"
+                >
+                  +1 (954) 854-1484
+                </a>
+                <br />
+                <span className="text-slate-400">Text first, faster reply.</span>
+              </dd>
+            </div>
+          </dl>
+        </section>
       </div>
     </main>
   );

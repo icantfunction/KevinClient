@@ -2,12 +2,17 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   StudioOsAuthProvider,
   useStudioOsAuth,
 } from "@/components/studio-os-auth-provider";
+import {
+  StudioOsAuthRequiredScreen,
+  StudioOsLoadingScreen,
+} from "@/components/studio-os-state-screens";
+import { readJsonResponse } from "@/lib/http";
 
 type ShotListItem = {
   readonly id: string;
@@ -17,13 +22,28 @@ type ShotListItem = {
   readonly notes?: string | null;
 };
 
+type ShotListPayload = {
+  readonly session?: {
+    readonly title?: string;
+    readonly sessionType?: string;
+    readonly locationName?: string;
+  };
+  readonly shotList?: {
+    readonly items?: ShotListItem[];
+    readonly notes?: string | null;
+  };
+};
+
 const makeId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : `${Date.now()}`;
 
+type ShotFilter = "all" | "must" | "remaining" | "captured";
+
 function ShotListScreen() {
   const { id } = useParams<{ id: string }>();
+  const pathname = usePathname();
   const { status, authorizedFetch } = useStudioOsAuth();
   const [sessionTitle, setSessionTitle] = useState("Loading session…");
   const [sessionMeta, setSessionMeta] = useState<string>("");
@@ -31,11 +51,19 @@ function ShotListScreen() {
   const [notes, setNotes] = useState("");
   const [draftItem, setDraftItem] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [filter, setFilter] = useState<ShotFilter>("all");
 
   useEffect(() => {
     if (status !== "authenticated" || !id) return;
+    setMessage(null);
     authorizedFetch(`/sessions/${id}/shot-list`)
-      .then((response) => response.json())
+      .then((response) =>
+        readJsonResponse<ShotListPayload>(
+          response,
+          "Unable to load the shot list.",
+        ),
+      )
       .then((payload) => {
         setSessionTitle(payload.session?.title ?? "Shot list");
         const meta = [
@@ -50,7 +78,11 @@ function ShotListScreen() {
         );
         setNotes(payload.shotList?.notes ?? "");
       })
-      .catch(() => setMessage("Unable to load shot list."));
+      .catch((error) =>
+        setMessage(
+          error instanceof Error ? error.message : "Unable to load shot list.",
+        ),
+      );
   }, [authorizedFetch, id, status]);
 
   const addItem = (event: FormEvent<HTMLFormElement>) => {
@@ -69,21 +101,76 @@ function ShotListScreen() {
     setDraftItem("");
   };
 
+  const removeItem = (itemId: string) => {
+    setItems((current) => current.filter((entry) => entry.id !== itemId));
+  };
+
   const save = async () => {
-    const response = await authorizedFetch(`/sessions/${id}/shot-list`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ items, notes }),
-    });
-    setMessage(response.ok ? "Shot list saved." : "Unable to save shot list.");
+    setIsSaving(true);
+    setMessage(null);
+    try {
+      await readJsonResponse<ShotListPayload>(
+        await authorizedFetch(`/sessions/${id}/shot-list`, {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ items, notes }),
+        }),
+        "Unable to save the shot list.",
+      );
+      setMessage("Shot list saved.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Unable to save shot list.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const totalItems = items.length;
   const capturedCount = items.filter((item) => item.captured).length;
   const mustHaveCount = items.filter((item) => item.mustHave).length;
+  const remainingCount = totalItems - capturedCount;
   const progressPct = totalItems
     ? Math.round((capturedCount / totalItems) * 100)
     : 0;
+
+  const filteredItems = items.filter((item) => {
+    if (filter === "must") return item.mustHave;
+    if (filter === "remaining") return !item.captured;
+    if (filter === "captured") return item.captured;
+    return true;
+  });
+
+  const filterOptions: ReadonlyArray<{
+    readonly value: ShotFilter;
+    readonly label: string;
+    readonly count: number;
+  }> = [
+    { value: "all", label: "All", count: totalItems },
+    { value: "must", label: "Must-have", count: mustHaveCount },
+    { value: "remaining", label: "Remaining", count: remainingCount },
+    { value: "captured", label: "Captured", count: capturedCount },
+  ];
+
+  if (status === "booting") {
+    return (
+      <StudioOsLoadingScreen
+        title="Loading shot list"
+        description="Checking your session access."
+      />
+    );
+  }
+
+  if (status !== "authenticated") {
+    return (
+      <StudioOsAuthRequiredScreen
+        href={`/?next=${encodeURIComponent(pathname)}`}
+        title="Sign in to open this shot list"
+        description="Session shot lists are protected inside Studio OS."
+      />
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 pb-10 text-slate-100">
@@ -98,9 +185,10 @@ function ShotListScreen() {
           <button
             type="button"
             onClick={() => void save()}
-            className="rounded-xl bg-amber-300 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-slate-900 transition hover:brightness-110"
+            disabled={isSaving}
+            className="rounded-xl bg-amber-300 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-slate-900 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Save shot list
+            {isSaving ? "Saving…" : "Save shot list"}
           </button>
         </div>
 
@@ -170,13 +258,61 @@ function ShotListScreen() {
           </button>
         </form>
 
+        {totalItems > 0 ? (
+          <div
+            role="tablist"
+            aria-label="Filter shots"
+            className="flex flex-wrap gap-1.5"
+          >
+            {filterOptions.map((option) => {
+              const isActive = filter === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setFilter(option.value)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[0.12em] transition ${
+                    isActive
+                      ? "bg-amber-300 text-slate-950"
+                      : "bg-white/10 text-slate-200 hover:bg-white/15"
+                  }`}
+                >
+                  {option.label}
+                  <span
+                    className={`rounded-full px-1.5 text-[0.62rem] tracking-normal ${
+                      isActive
+                        ? "bg-slate-950/15 text-slate-950"
+                        : "bg-white/10 text-slate-300"
+                    }`}
+                  >
+                    {option.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
         <section className="space-y-2.5">
-          {items.length === 0 ? (
+          {totalItems === 0 ? (
             <div className="rounded-[1.4rem] border border-dashed border-white/10 bg-white/[0.02] px-4 py-10 text-center text-sm text-slate-400">
               No shots yet. Add the must-haves first, then build out the rest.
             </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="rounded-[1.4rem] border border-dashed border-white/10 bg-white/[0.02] px-4 py-8 text-center text-sm text-slate-400">
+              Nothing matches this filter.
+              <button
+                type="button"
+                onClick={() => setFilter("all")}
+                className="ml-2 text-amber-200 underline-offset-4 transition hover:underline"
+              >
+                Show all
+              </button>
+            </div>
           ) : (
-            items.map((item) => (
+            filteredItems.map((item) => (
               <div
                 key={item.id}
                 className={`rounded-2xl border bg-white/5 p-4 backdrop-blur transition ${
@@ -195,11 +331,32 @@ function ShotListScreen() {
                   >
                     {item.description}
                   </p>
-                  {item.mustHave ? (
-                    <span className="rounded-full bg-amber-300/20 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-amber-200 ring-1 ring-inset ring-amber-300/30">
-                      Must
-                    </span>
-                  ) : null}
+                  <div className="flex flex-shrink-0 items-center gap-2">
+                    {item.mustHave ? (
+                      <span className="rounded-full bg-amber-300/20 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-amber-200 ring-1 ring-inset ring-amber-300/30">
+                        Must
+                      </span>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.id)}
+                      aria-label="Delete shot"
+                      title="Delete shot"
+                      className="rounded-md p-1.5 text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4"
+                      >
+                        <path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v7M14 11v7" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <button

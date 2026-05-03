@@ -12,18 +12,22 @@ import {
   type ComponentType,
   type ReactNode,
 } from "react";
+import { StudioOsLoadingScreen } from "@/components/studio-os-state-screens";
+import { readJsonResponse } from "@/lib/http";
 import { foldedStudioSource } from "@/lib/studio-source";
 import { studioOsRuntimeConfig } from "@/lib/studio-os-config";
 import { useStudioOsAuth } from "./studio-os-auth-provider";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type LooseRecord = Record<string, any>;
 type NavKey =
   | "overview"
   | "pipeline"
   | "sessions"
   | "studio"
+  | "galleries"
   | "finance"
-  | "operations"
+  | "tasks"
   | "inbox";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -81,10 +85,40 @@ const requestKey = () =>
     ? crypto.randomUUID()
     : `${Date.now()}`;
 
+const DASHBOARD_WINDOW_MS = 14 * 86400000;
+
 const asArray = (value: unknown): LooseRecord[] =>
   Array.isArray(value) ? (value as LooseRecord[]) : [];
 const asRecord = (value: unknown): LooseRecord =>
   (value && typeof value === "object" ? value : {}) as LooseRecord;
+
+const humanizeLabel = (value?: string | null) =>
+  String(value ?? "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+
+const searchResultHref = (result: LooseRecord) => {
+  switch (result.entityType) {
+    case "session":
+      return `/session/${result.entityId}/shot-list`;
+    case "studio_booking":
+      return `/studio-booking/${result.entityId}/check-in`;
+    case "invoice":
+      return "#finance";
+    case "task":
+      return "#tasks";
+    case "activity":
+      return "#inbox";
+    case "inquiry":
+      return "#pipeline";
+    case "gallery":
+      return "#galleries";
+    case "smart_file":
+    case "client":
+    default:
+      return "#pipeline";
+  }
+};
 
 const initialsOf = (name?: string) =>
   String(name ?? "?")
@@ -228,6 +262,14 @@ const Icon = {
       <path d="M4 13h4l1 2h6l1-2h4" />
     </svg>
   ),
+  Gallery: ({ className = "h-4 w-4" }: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="3" y="3" width="18" height="14" rx="2" />
+      <circle cx="9" cy="9" r="1.5" />
+      <path d="m4 16 5-5 4 4 3-3 4 4" />
+      <path d="M5 21h14" />
+    </svg>
+  ),
   Search: ({ className = "h-4 w-4" }: IconProps) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <circle cx="11" cy="11" r="7" />
@@ -276,8 +318,9 @@ const navItems: ReadonlyArray<{
   { key: "pipeline", label: "Pipeline", icon: Icon.Pipeline },
   { key: "sessions", label: "Sessions", icon: Icon.Camera },
   { key: "studio", label: "Studio", icon: Icon.Studio },
+  { key: "galleries", label: "Galleries", icon: Icon.Gallery },
   { key: "finance", label: "Finance", icon: Icon.Wallet },
-  { key: "operations", label: "Tasks", icon: Icon.Tasks },
+  { key: "tasks", label: "Tasks", icon: Icon.Tasks },
   { key: "inbox", label: "Inbox", icon: Icon.Inbox },
 ];
 
@@ -297,7 +340,12 @@ function LoginPanel() {
 
   const enterDemo = () => {
     if (typeof window !== "undefined") {
+      const nextPath = new URLSearchParams(window.location.search).get("next");
       window.localStorage.setItem("studio-os-admin-demo-mode-v1", "1");
+      if (nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")) {
+        window.location.replace(nextPath);
+        return;
+      }
       window.location.replace("/?demo=1");
     }
   };
@@ -447,6 +495,900 @@ function Card({
   );
 }
 
+function EmptyState({
+  headline,
+  hint,
+  action,
+  variant = "block",
+}: {
+  readonly headline: string;
+  readonly hint?: string;
+  readonly action?: ReactNode;
+  readonly variant?: "block" | "row" | "column";
+}) {
+  if (variant === "column") {
+    return (
+      <div className="rounded-md border border-dashed border-slate-200 bg-white/60 px-3 py-5 text-center">
+        <p className="text-xs font-medium text-slate-600">{headline}</p>
+        {hint ? (
+          <p className="mt-1 text-[0.7rem] text-slate-400">{hint}</p>
+        ) : null}
+        {action ? (
+          <div className="mt-2.5 flex justify-center">{action}</div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (variant === "row") {
+    return (
+      <div className="px-5 py-6">
+        <p className="text-sm font-medium text-slate-700">{headline}</p>
+        {hint ? (
+          <p className="mt-1 text-xs text-slate-500">{hint}</p>
+        ) : null}
+        {action ? <div className="mt-3">{action}</div> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-dashed border-slate-200 bg-white/60 px-5 py-8 text-center">
+      <p className="text-sm font-medium text-slate-700">{headline}</p>
+      {hint ? (
+        <p className="mt-1 text-xs text-slate-500">{hint}</p>
+      ) : null}
+      {action ? (
+        <div className="mt-4 flex justify-center">{action}</div>
+      ) : null}
+    </div>
+  );
+}
+
+function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+}: {
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly title: string;
+  readonly description?: string;
+  readonly children: ReactNode;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <div
+        className="absolute inset-0 bg-slate-900/40"
+        onClick={onClose}
+        aria-hidden
+      />
+      <div className="relative z-10 w-full max-w-lg rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-3.5">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+            {description ? (
+              <p className="mt-0.5 text-xs text-slate-500">{description}</p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <path d="M6 6l12 12M6 18 18 6" />
+            </svg>
+          </button>
+        </div>
+        <div className="px-5 py-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+const formInputClass =
+  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10";
+const formSelectClass = `${formInputClass} appearance-none`;
+const formTextareaClass = `${formInputClass} min-h-[80px] resize-none`;
+
+function Field({
+  label,
+  hint,
+  required = false,
+  children,
+}: {
+  readonly label: string;
+  readonly hint?: string;
+  readonly required?: boolean;
+  readonly children: ReactNode;
+}) {
+  return (
+    <label className="block text-sm">
+      <span className="flex items-center gap-1 text-xs font-medium text-slate-600">
+        {label}
+        {required ? (
+          <span className="text-rose-500" aria-hidden>
+            *
+          </span>
+        ) : null}
+      </span>
+      <div className="mt-1">{children}</div>
+      {hint ? (
+        <p className="mt-1 text-[0.7rem] text-slate-400">{hint}</p>
+      ) : null}
+    </label>
+  );
+}
+
+function FormActions({
+  onCancel,
+  submitting,
+  submitLabel,
+  submittingLabel = "Saving…",
+}: {
+  readonly onCancel: () => void;
+  readonly submitting: boolean;
+  readonly submitLabel: string;
+  readonly submittingLabel?: string;
+}) {
+  return (
+    <div className="flex items-center justify-end gap-2 pt-1">
+      <button
+        type="button"
+        onClick={onCancel}
+        className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        disabled={submitting}
+        className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {submitting ? submittingLabel : submitLabel}
+      </button>
+    </div>
+  );
+}
+
+const inquiryEventTypeOptions: ReadonlyArray<{
+  readonly value: string;
+  readonly label: string;
+}> = [
+  { value: "wedding", label: "Wedding" },
+  { value: "portrait", label: "Portrait" },
+  { value: "branding", label: "Branding" },
+  { value: "family", label: "Family" },
+  { value: "studio_rental", label: "Studio rental" },
+  { value: "podcast", label: "Podcast" },
+  { value: "commercial", label: "Commercial" },
+  { value: "other", label: "Other" },
+];
+
+const inquiryStageOptions: ReadonlyArray<{
+  readonly value: string;
+  readonly label: string;
+}> = [
+  { value: "new", label: "New" },
+  { value: "qualifying", label: "Qualifying" },
+  { value: "proposal_sent", label: "Proposal sent" },
+  { value: "won", label: "Booked" },
+];
+
+const sessionStatusOptions: ReadonlyArray<{
+  readonly value: string;
+  readonly label: string;
+}> = [
+  { value: "tentative", label: "Tentative" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "completed", label: "Completed" },
+];
+
+const invoiceSourceTypeOptions: ReadonlyArray<{
+  readonly value: string;
+  readonly label: string;
+}> = [
+  { value: "wedding", label: "Wedding" },
+  { value: "portrait", label: "Portrait" },
+  { value: "branding", label: "Branding" },
+  { value: "family", label: "Family" },
+  { value: "commercial", label: "Commercial" },
+  { value: "studio_buyout", label: "Studio buyout" },
+  { value: "other", label: "Other" },
+];
+
+const invoiceStatusOptions: ReadonlyArray<{
+  readonly value: string;
+  readonly label: string;
+}> = [
+  { value: "draft", label: "Draft" },
+  { value: "sent", label: "Sent" },
+  { value: "partial", label: "Partial" },
+  { value: "paid", label: "Paid" },
+  { value: "overdue", label: "Overdue" },
+];
+
+const taskPriorityOptions: ReadonlyArray<{
+  readonly value: string;
+  readonly label: string;
+}> = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
+
+const taskStatusOptions: ReadonlyArray<{
+  readonly value: string;
+  readonly label: string;
+}> = [
+  { value: "open", label: "Open" },
+  { value: "in_progress", label: "In progress" },
+  { value: "completed", label: "Completed" },
+];
+
+type CreateInquiryPayload = {
+  readonly inquirerName: string;
+  readonly contactEmail: string;
+  readonly contactPhone: string;
+  readonly eventType: string;
+  readonly status: string;
+  readonly message: string;
+};
+
+function InquiryFormModal({
+  open,
+  onClose,
+  onSubmit,
+  defaultStatus,
+}: {
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly onSubmit: (payload: CreateInquiryPayload) => Promise<void>;
+  readonly defaultStatus: string;
+}) {
+  const [inquirerName, setInquirerName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [eventType, setEventType] = useState("wedding");
+  const [status, setStatus] = useState(defaultStatus);
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setStatus(defaultStatus);
+      setError(null);
+    }
+  }, [open, defaultStatus]);
+
+  const reset = () => {
+    setInquirerName("");
+    setContactEmail("");
+    setContactPhone("");
+    setEventType("wedding");
+    setStatus(defaultStatus);
+    setMessage("");
+  };
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!inquirerName.trim()) {
+      setError("Name is required.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await onSubmit({
+        inquirerName: inquirerName.trim(),
+        contactEmail: contactEmail.trim(),
+        contactPhone: contactPhone.trim(),
+        eventType,
+        status,
+        message: message.trim(),
+      });
+      reset();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create inquiry.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="New inquiry"
+      description="Capture a lead from email, phone, or in-person."
+    >
+      <form className="space-y-3" onSubmit={submit}>
+        <Field label="Name" required>
+          <input
+            className={formInputClass}
+            value={inquirerName}
+            onChange={(event) => setInquirerName(event.target.value)}
+            autoFocus
+          />
+        </Field>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Email">
+            <input
+              className={formInputClass}
+              type="email"
+              value={contactEmail}
+              onChange={(event) => setContactEmail(event.target.value)}
+            />
+          </Field>
+          <Field label="Phone">
+            <input
+              className={formInputClass}
+              type="tel"
+              value={contactPhone}
+              onChange={(event) => setContactPhone(event.target.value)}
+            />
+          </Field>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Event type">
+            <select
+              className={formSelectClass}
+              value={eventType}
+              onChange={(event) => setEventType(event.target.value)}
+            >
+              {inquiryEventTypeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Stage">
+            <select
+              className={formSelectClass}
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+            >
+              {inquiryStageOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <Field label="Message">
+          <textarea
+            className={formTextareaClass}
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            placeholder="What did they ask for?"
+          />
+        </Field>
+        {error ? (
+          <p className="rounded-md bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            {error}
+          </p>
+        ) : null}
+        <FormActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Save inquiry"
+        />
+      </form>
+    </Modal>
+  );
+}
+
+type CreateSessionPayload = {
+  readonly title: string;
+  readonly sessionType: string;
+  readonly locationName: string;
+  readonly clientName: string;
+  readonly status: string;
+  readonly scheduledStart: string;
+  readonly scheduledEnd: string;
+};
+
+const combineDateTime = (dateValue: string, timeValue: string): string | null => {
+  if (!dateValue) return null;
+  const composed = `${dateValue}T${timeValue || "09:00"}`;
+  const parsed = new Date(composed);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
+};
+
+function SessionFormModal({
+  open,
+  onClose,
+  onSubmit,
+}: {
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly onSubmit: (payload: CreateSessionPayload) => Promise<void>;
+}) {
+  const [title, setTitle] = useState("");
+  const [sessionType, setSessionType] = useState("portrait");
+  const [locationName, setLocationName] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [status, setStatus] = useState("confirmed");
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("10:00");
+  const [endTime, setEndTime] = useState("12:00");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) setError(null);
+  }, [open]);
+
+  const reset = () => {
+    setTitle("");
+    setSessionType("portrait");
+    setLocationName("");
+    setClientName("");
+    setStatus("confirmed");
+    setDate("");
+    setStartTime("10:00");
+    setEndTime("12:00");
+  };
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!title.trim()) {
+      setError("Session title is required.");
+      return;
+    }
+    const scheduledStart = combineDateTime(date, startTime);
+    const scheduledEnd = combineDateTime(date, endTime);
+    if (!scheduledStart || !scheduledEnd) {
+      setError("Pick a date and start/end time.");
+      return;
+    }
+    if (new Date(scheduledEnd).getTime() <= new Date(scheduledStart).getTime()) {
+      setError("End time has to be after start time.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await onSubmit({
+        title: title.trim(),
+        sessionType,
+        locationName: locationName.trim(),
+        clientName: clientName.trim(),
+        status,
+        scheduledStart,
+        scheduledEnd,
+      });
+      reset();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create session.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="New session"
+      description="Schedule a shoot, studio block, or planning call."
+    >
+      <form className="space-y-3" onSubmit={submit}>
+        <Field label="Title" required>
+          <input
+            className={formInputClass}
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="e.g. Ortiz wedding — ceremony + reception"
+            autoFocus
+          />
+        </Field>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Type">
+            <select
+              className={formSelectClass}
+              value={sessionType}
+              onChange={(event) => setSessionType(event.target.value)}
+            >
+              {inquiryEventTypeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Status">
+            <select
+              className={formSelectClass}
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+            >
+              {sessionStatusOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Client">
+            <input
+              className={formInputClass}
+              value={clientName}
+              onChange={(event) => setClientName(event.target.value)}
+              placeholder="Who is this for?"
+            />
+          </Field>
+          <Field label="Location">
+            <input
+              className={formInputClass}
+              value={locationName}
+              onChange={(event) => setLocationName(event.target.value)}
+              placeholder="Venue or studio"
+            />
+          </Field>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="Date" required>
+            <input
+              className={formInputClass}
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+            />
+          </Field>
+          <Field label="Start" required>
+            <input
+              className={formInputClass}
+              type="time"
+              value={startTime}
+              onChange={(event) => setStartTime(event.target.value)}
+            />
+          </Field>
+          <Field label="End" required>
+            <input
+              className={formInputClass}
+              type="time"
+              value={endTime}
+              onChange={(event) => setEndTime(event.target.value)}
+            />
+          </Field>
+        </div>
+        {error ? (
+          <p className="rounded-md bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            {error}
+          </p>
+        ) : null}
+        <FormActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Save session"
+        />
+      </form>
+    </Modal>
+  );
+}
+
+type CreateInvoicePayload = {
+  readonly clientName: string;
+  readonly sourceType: string;
+  readonly status: string;
+  readonly totalCents: number;
+  readonly dueAt: string | null;
+};
+
+function InvoiceFormModal({
+  open,
+  onClose,
+  onSubmit,
+}: {
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly onSubmit: (payload: CreateInvoicePayload) => Promise<void>;
+}) {
+  const [clientName, setClientName] = useState("");
+  const [sourceType, setSourceType] = useState("wedding");
+  const [status, setStatus] = useState("draft");
+  const [totalDollars, setTotalDollars] = useState("");
+  const [dueAt, setDueAt] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) setError(null);
+  }, [open]);
+
+  const reset = () => {
+    setClientName("");
+    setSourceType("wedding");
+    setStatus("draft");
+    setTotalDollars("");
+    setDueAt("");
+  };
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!clientName.trim()) {
+      setError("Client name is required.");
+      return;
+    }
+    const dollars = Number(totalDollars);
+    if (!Number.isFinite(dollars) || dollars <= 0) {
+      setError("Enter a total greater than zero.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await onSubmit({
+        clientName: clientName.trim(),
+        sourceType,
+        status,
+        totalCents: Math.round(dollars * 100),
+        dueAt: dueAt ? new Date(`${dueAt}T12:00`).toISOString() : null,
+      });
+      reset();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create invoice.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="New invoice"
+      description="Bill a client for a session, package, or studio rental."
+    >
+      <form className="space-y-3" onSubmit={submit}>
+        <Field label="Client" required>
+          <input
+            className={formInputClass}
+            value={clientName}
+            onChange={(event) => setClientName(event.target.value)}
+            placeholder="Who is being billed?"
+            autoFocus
+          />
+        </Field>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Type">
+            <select
+              className={formSelectClass}
+              value={sourceType}
+              onChange={(event) => setSourceType(event.target.value)}
+            >
+              {invoiceSourceTypeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Status">
+            <select
+              className={formSelectClass}
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+            >
+              {invoiceStatusOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Total" required hint="In US dollars.">
+            <input
+              className={formInputClass}
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              value={totalDollars}
+              onChange={(event) => setTotalDollars(event.target.value)}
+              placeholder="0.00"
+            />
+          </Field>
+          <Field label="Due">
+            <input
+              className={formInputClass}
+              type="date"
+              value={dueAt}
+              onChange={(event) => setDueAt(event.target.value)}
+            />
+          </Field>
+        </div>
+        {error ? (
+          <p className="rounded-md bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            {error}
+          </p>
+        ) : null}
+        <FormActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Save invoice"
+        />
+      </form>
+    </Modal>
+  );
+}
+
+type CreateTaskPayload = {
+  readonly title: string;
+  readonly priority: string;
+  readonly status: string;
+  readonly dueAt: string | null;
+};
+
+function TaskFormModal({
+  open,
+  onClose,
+  onSubmit,
+  defaultStatus,
+}: {
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly onSubmit: (payload: CreateTaskPayload) => Promise<void>;
+  readonly defaultStatus: string;
+}) {
+  const [title, setTitle] = useState("");
+  const [priority, setPriority] = useState("medium");
+  const [status, setStatus] = useState(defaultStatus);
+  const [dueAt, setDueAt] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setStatus(defaultStatus);
+      setError(null);
+    }
+  }, [open, defaultStatus]);
+
+  const reset = () => {
+    setTitle("");
+    setPriority("medium");
+    setStatus(defaultStatus);
+    setDueAt("");
+  };
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!title.trim()) {
+      setError("Task title is required.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await onSubmit({
+        title: title.trim(),
+        priority,
+        status,
+        dueAt: dueAt ? new Date(`${dueAt}T17:00`).toISOString() : null,
+      });
+      reset();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create task.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="New task"
+      description="Add to-dos for the studio or for a specific client."
+    >
+      <form className="space-y-3" onSubmit={submit}>
+        <Field label="Title" required>
+          <input
+            className={formInputClass}
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="e.g. Send Ortiz wedding timeline draft"
+            autoFocus
+          />
+        </Field>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="Priority">
+            <select
+              className={formSelectClass}
+              value={priority}
+              onChange={(event) => setPriority(event.target.value)}
+            >
+              {taskPriorityOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Status">
+            <select
+              className={formSelectClass}
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+            >
+              {taskStatusOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Due">
+            <input
+              className={formInputClass}
+              type="date"
+              value={dueAt}
+              onChange={(event) => setDueAt(event.target.value)}
+            />
+          </Field>
+        </div>
+        {error ? (
+          <p className="rounded-md bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            {error}
+          </p>
+        ) : null}
+        <FormActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Save task"
+        />
+      </form>
+    </Modal>
+  );
+}
+
 function StatCard({
   label,
   value,
@@ -469,15 +1411,13 @@ function StatCard({
   );
 }
 
-function EmptyRow({ children }: { readonly children: ReactNode }) {
-  return (
-    <div className="rounded-md bg-slate-50 px-3 py-5 text-center text-sm text-slate-400">
-      {children}
-    </div>
-  );
-}
-
-function PipelineBoard({ inquiries }: { readonly inquiries: LooseRecord[] }) {
+function PipelineBoard({
+  inquiries,
+  onAddInquiry,
+}: {
+  readonly inquiries: LooseRecord[];
+  readonly onAddInquiry: (status: string) => void;
+}) {
   const columns: ReadonlyArray<{
     readonly key: string;
     readonly title: string;
@@ -517,6 +1457,7 @@ function PipelineBoard({ inquiries }: { readonly inquiries: LooseRecord[] }) {
               </div>
               <button
                 type="button"
+                onClick={() => onAddInquiry(col.key)}
                 aria-label={`Add to ${col.title}`}
                 className="rounded p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
               >
@@ -525,9 +1466,11 @@ function PipelineBoard({ inquiries }: { readonly inquiries: LooseRecord[] }) {
             </div>
             <div className="space-y-2">
               {rows.length === 0 ? (
-                <div className="rounded-md border border-dashed border-slate-200 bg-white/60 py-4 text-center text-xs text-slate-400">
-                  —
-                </div>
+                <EmptyState
+                  variant="column"
+                  headline={`No ${col.title.toLowerCase()} leads`}
+                  hint="Tap + to capture one."
+                />
               ) : (
                 rows.map((item) => (
                   <div
@@ -561,6 +1504,7 @@ function PipelineBoard({ inquiries }: { readonly inquiries: LooseRecord[] }) {
 
 export default function StudioOsApp() {
   const { status, session, authorizedFetch, logout } = useStudioOsAuth();
+  const isDemo = Boolean((session as LooseRecord | null)?.demoMode);
   const [dashboard, setDashboard] = useState<LooseRecord | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [searchResults, setSearchResults] = useState<LooseRecord[]>([]);
@@ -572,10 +1516,24 @@ export default function StudioOsApp() {
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [timerPending, setTimerPending] = useState(false);
   const [nowTick, setNowTick] = useState(Date.now());
   const [activeNav, setActiveNav] = useState<NavKey>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
+  const [inquiryDefaultStage, setInquiryDefaultStage] = useState("new");
+  const [sessionModalOpen, setSessionModalOpen] = useState(false);
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [taskModalDefaultStatus, setTaskModalDefaultStatus] = useState<
+    string | null
+  >(null);
   const deferredSearch = useDeferredValue(searchInput);
+
+  const fetchJson = useCallback(
+    async <T,>(path: string, fallbackMessage: string) =>
+      readJsonResponse<T>(await authorizedFetch(path), fallbackMessage),
+    [authorizedFetch],
+  );
 
   const loadDashboard = useCallback(async () => {
     if (status !== "authenticated") return;
@@ -583,52 +1541,209 @@ export default function StudioOsApp() {
     setErrorMessage(null);
     try {
       const year = new Date().getUTCFullYear();
-      const range = `from=${encodeURIComponent(new Date().toISOString())}&to=${encodeURIComponent(new Date(Date.now() + 14 * 86400000).toISOString())}`;
-      const requests = await Promise.all([
-        authorizedFetch("/dashboard").then((r) => r.json()),
-        authorizedFetch("/inquiries?limit=12").then((r) => r.json()),
-        authorizedFetch("/sessions?limit=12").then((r) => r.json()),
-        authorizedFetch(`/calendar?${range}`).then((r) => r.json()),
-        authorizedFetch("/smart-files").then((r) => r.json()),
-        authorizedFetch("/galleries").then((r) => r.json()),
-        authorizedFetch("/studio/bookings").then((r) => r.json()),
-        authorizedFetch("/studio/spaces").then((r) => r.json()),
-        authorizedFetch("/studio/equipment").then((r) => r.json()),
-        authorizedFetch("/invoices").then((r) => r.json()),
-        authorizedFetch("/payments?limit=12").then((r) => r.json()),
-        authorizedFetch("/payments/provider").then((r) => r.json()),
-        authorizedFetch("/expenses").then((r) => r.json()),
-        authorizedFetch("/tasks?limit=12").then((r) => r.json()),
-        authorizedFetch("/inbox").then((r) => r.json()),
-        authorizedFetch(`/reports/revenue?year=${year}`).then((r) => r.json()),
-        authorizedFetch(`/reports/profit?year=${year}`).then((r) => r.json()),
-        authorizedFetch(`/reports/conversion`).then((r) => r.json()),
-        authorizedFetch(`/reports/ltv`).then((r) => r.json()),
-        authorizedFetch("/time-entries?limit=12").then((r) => r.json()),
-      ]);
+      const range = `from=${encodeURIComponent(new Date().toISOString())}&to=${encodeURIComponent(new Date(Date.now() + DASHBOARD_WINDOW_MS).toISOString())}`;
+      const requests = [
+        {
+          label: "summary",
+          fallback: {},
+          load: fetchJson<Record<string, unknown>>(
+            "/dashboard",
+            "Unable to load the overview summary.",
+          ),
+        },
+        {
+          label: "pipeline",
+          fallback: { inquiries: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/inquiries?limit=12",
+            "Unable to load inquiries.",
+          ),
+        },
+        {
+          label: "sessions",
+          fallback: { sessions: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/sessions?limit=12",
+            "Unable to load sessions.",
+          ),
+        },
+        {
+          label: "calendar",
+          fallback: { entries: [] },
+          load: fetchJson<Record<string, unknown>>(
+            `/calendar?${range}`,
+            "Unable to load the calendar.",
+          ),
+        },
+        {
+          label: "smart files",
+          fallback: { smartFiles: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/smart-files",
+            "Unable to load smart files.",
+          ),
+        },
+        {
+          label: "galleries",
+          fallback: { galleries: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/galleries",
+            "Unable to load galleries.",
+          ),
+        },
+        {
+          label: "bookings",
+          fallback: { bookings: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/studio/bookings",
+            "Unable to load studio bookings.",
+          ),
+        },
+        {
+          label: "spaces",
+          fallback: { spaces: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/studio/spaces",
+            "Unable to load studio spaces.",
+          ),
+        },
+        {
+          label: "equipment",
+          fallback: { equipment: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/studio/equipment",
+            "Unable to load studio equipment.",
+          ),
+        },
+        {
+          label: "invoices",
+          fallback: { invoices: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/invoices",
+            "Unable to load invoices.",
+          ),
+        },
+        {
+          label: "payments",
+          fallback: { payments: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/payments?limit=12",
+            "Unable to load payments.",
+          ),
+        },
+        {
+          label: "payment provider",
+          fallback: { configuration: {} },
+          load: fetchJson<Record<string, unknown>>(
+            "/payments/provider",
+            "Unable to load payment provider details.",
+          ),
+        },
+        {
+          label: "expenses",
+          fallback: { expenses: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/expenses",
+            "Unable to load expenses.",
+          ),
+        },
+        {
+          label: "tasks",
+          fallback: { tasks: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/tasks?limit=12",
+            "Unable to load tasks.",
+          ),
+        },
+        {
+          label: "activity",
+          fallback: { activities: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/inbox",
+            "Unable to load activity.",
+          ),
+        },
+        {
+          label: "revenue",
+          fallback: { totals: {} },
+          load: fetchJson<Record<string, unknown>>(
+            `/reports/revenue?year=${year}`,
+            "Unable to load the revenue report.",
+          ),
+        },
+        {
+          label: "profit",
+          fallback: { totals: {} },
+          load: fetchJson<Record<string, unknown>>(
+            `/reports/profit?year=${year}`,
+            "Unable to load the profit report.",
+          ),
+        },
+        {
+          label: "conversion",
+          fallback: { byEventType: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/reports/conversion",
+            "Unable to load conversion metrics.",
+          ),
+        },
+        {
+          label: "ltv",
+          fallback: { clients: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/reports/ltv",
+            "Unable to load lifetime value metrics.",
+          ),
+        },
+        {
+          label: "time tracking",
+          fallback: { summary: {}, entries: [] },
+          load: fetchJson<Record<string, unknown>>(
+            "/time-entries?limit=12",
+            "Unable to load time tracking.",
+          ),
+        },
+      ] as const;
+      const settled = await Promise.allSettled(
+        requests.map((request) => request.load),
+      );
+      const failures = settled.flatMap((result, index) =>
+        result.status === "rejected" ? [requests[index].label] : [],
+      );
+      const resolved = settled.map((result, index) =>
+        result.status === "fulfilled" ? result.value : requests[index].fallback,
+      );
 
       setDashboard({
-        summary: requests[0],
-        inquiries: asArray(asRecord(requests[1]).inquiries),
-        sessions: asArray(asRecord(requests[2]).sessions),
-        calendar: asArray(asRecord(requests[3]).entries),
-        smartFiles: asArray(asRecord(requests[4]).smartFiles),
-        galleries: asArray(asRecord(requests[5]).galleries),
-        bookings: asArray(asRecord(requests[6]).bookings),
-        spaces: asArray(asRecord(requests[7]).spaces),
-        equipment: asArray(asRecord(requests[8]).equipment),
-        invoices: asArray(asRecord(requests[9]).invoices),
-        payments: asArray(asRecord(requests[10]).payments),
-        paymentProvider: asRecord(requests[11]).configuration,
-        expenses: asArray(asRecord(requests[12]).expenses),
-        tasks: asArray(asRecord(requests[13]).tasks),
-        inbox: asArray(asRecord(requests[14]).activities),
-        revenue: asRecord(requests[15]),
-        profit: asRecord(requests[16]),
-        conversion: asRecord(requests[17]),
-        ltv: asRecord(requests[18]),
-        time: asRecord(requests[19]),
+        summary: resolved[0],
+        inquiries: asArray(asRecord(resolved[1]).inquiries),
+        sessions: asArray(asRecord(resolved[2]).sessions),
+        calendar: asArray(asRecord(resolved[3]).entries),
+        smartFiles: asArray(asRecord(resolved[4]).smartFiles),
+        galleries: asArray(asRecord(resolved[5]).galleries),
+        bookings: asArray(asRecord(resolved[6]).bookings),
+        spaces: asArray(asRecord(resolved[7]).spaces),
+        equipment: asArray(asRecord(resolved[8]).equipment),
+        invoices: asArray(asRecord(resolved[9]).invoices),
+        payments: asArray(asRecord(resolved[10]).payments),
+        paymentProvider: asRecord(resolved[11]).configuration,
+        expenses: asArray(asRecord(resolved[12]).expenses),
+        tasks: asArray(asRecord(resolved[13]).tasks),
+        inbox: asArray(asRecord(resolved[14]).activities),
+        revenue: asRecord(resolved[15]),
+        profit: asRecord(resolved[16]),
+        conversion: asRecord(resolved[17]),
+        ltv: asRecord(resolved[18]),
+        time: asRecord(resolved[19]),
       });
+
+      if (failures.length > 0) {
+        setErrorMessage(
+          failures.length === requests.length
+            ? "Unable to load the dashboard right now."
+            : `Some sections are temporarily unavailable: ${failures.slice(0, 4).join(", ")}${failures.length > 4 ? ", and more" : ""}.`,
+        );
+      }
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Unable to load dashboard.",
@@ -636,7 +1751,7 @@ export default function StudioOsApp() {
     } finally {
       setLoading(false);
     }
-  }, [authorizedFetch, status]);
+  }, [fetchJson, status]);
 
   const loadDashboardRef = useRef(loadDashboard);
   loadDashboardRef.current = loadDashboard;
@@ -654,8 +1769,10 @@ export default function StudioOsApp() {
     }
 
     let cancelled = false;
-    authorizedFetch(`/search?q=${encodeURIComponent(deferredSearch)}&limit=8`)
-      .then((response) => response.json())
+    fetchJson<Record<string, unknown>>(
+      `/search?q=${encodeURIComponent(deferredSearch)}&limit=8`,
+      "Unable to search right now.",
+    )
       .then((payload) => {
         if (!cancelled) {
           setSearchResults(
@@ -670,7 +1787,7 @@ export default function StudioOsApp() {
     return () => {
       cancelled = true;
     };
-  }, [deferredSearch, status]);
+  }, [deferredSearch, fetchJson, status]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNowTick(Date.now()), 1000);
@@ -692,7 +1809,22 @@ export default function StudioOsApp() {
     asRecord(dashboard?.summary).upcoming_sessions,
   ).length
     ? asArray(asRecord(dashboard?.summary).upcoming_sessions)
-    : asArray(asRecord(dashboard?.summary).upcomingSessions);
+    : asArray(asRecord(dashboard?.summary).upcomingSessions).length
+      ? asArray(asRecord(dashboard?.summary).upcomingSessions)
+      : asArray(dashboard?.sessions).filter((session) => {
+          const scheduledAt = String(
+            (session.scheduledStart ??
+              session.scheduled_start ??
+              session.scheduledAt ??
+              "") as string,
+          );
+          const scheduledTime = new Date(scheduledAt).getTime();
+          return (
+            Number.isFinite(scheduledTime) &&
+            scheduledTime >= Date.now() &&
+            scheduledTime <= Date.now() + DASHBOARD_WINDOW_MS
+          );
+        });
 
   const quickStartTimer = async (
     scope = timeScope,
@@ -704,55 +1836,84 @@ export default function StudioOsApp() {
       return;
     }
 
-    await authorizedFetch("/time-entries", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "Idempotency-Key": requestKey(),
-      },
-      body: JSON.stringify({
-        scope,
-        scopeId: scopeId ?? null,
-        title: title.trim(),
-        notes: timeNotes.trim() || null,
-      }),
-    });
+    setTimerPending(true);
+    setErrorMessage(null);
+    try {
+      await readJsonResponse<Record<string, unknown>>(
+        await authorizedFetch("/time-entries", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "Idempotency-Key": requestKey(),
+          },
+          body: JSON.stringify({
+            scope,
+            scopeId: scopeId ?? null,
+            title: title.trim(),
+            notes: timeNotes.trim() || null,
+          }),
+        }),
+        "Unable to start the timer.",
+      );
 
-    setTimeTitle("");
-    setTimeNotes("");
-    setTimeScope("admin");
-    await loadDashboard();
+      setTimeTitle("");
+      setTimeNotes("");
+      setTimeScope("admin");
+      await loadDashboard();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to start timer.",
+      );
+    } finally {
+      setTimerPending(false);
+    }
   };
 
   const stopTimer = async () => {
     if (!activeEntry.id) return;
-    await authorizedFetch(`/time-entries/${activeEntry.id}/stop`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "Idempotency-Key": requestKey(),
-      },
-      body: JSON.stringify({
-        notes: timeNotes.trim() || activeEntry.notes || null,
-      }),
-    });
+    setTimerPending(true);
+    setErrorMessage(null);
+    try {
+      await readJsonResponse<Record<string, unknown>>(
+        await authorizedFetch(`/time-entries/${activeEntry.id}/stop`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "Idempotency-Key": requestKey(),
+          },
+          body: JSON.stringify({
+            notes: timeNotes.trim() || activeEntry.notes || null,
+          }),
+        }),
+        "Unable to stop the timer.",
+      );
 
-    setTimeNotes("");
-    await loadDashboard();
+      setTimeNotes("");
+      await loadDashboard();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to stop timer.",
+      );
+    } finally {
+      setTimerPending(false);
+    }
   };
 
   const refundStripePayment = async (paymentId: string) => {
     setRefundingPaymentId(paymentId);
     setErrorMessage(null);
     try {
-      await authorizedFetch(`/payments/${paymentId}/refund`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "Idempotency-Key": requestKey(),
-        },
-        body: JSON.stringify({}),
-      });
+      await readJsonResponse<Record<string, unknown>>(
+        await authorizedFetch(`/payments/${paymentId}/refund`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "Idempotency-Key": requestKey(),
+          },
+          body: JSON.stringify({}),
+        }),
+        "Unable to refund this payment.",
+      );
       await loadDashboard();
     } catch (error) {
       setErrorMessage(
@@ -763,6 +1924,210 @@ export default function StudioOsApp() {
     }
   };
 
+  const openInquiryModal = useCallback((stage: string = "new") => {
+    setInquiryDefaultStage(stage);
+    setInquiryModalOpen(true);
+  }, []);
+
+  const openTaskModal = useCallback((status: string = "open") => {
+    setTaskModalDefaultStatus(status);
+  }, []);
+
+  const createInquiry = useCallback(
+    async (payload: CreateInquiryPayload) => {
+      const newInquiry = {
+        id: `inq_${Date.now()}`,
+        inquirerName: payload.inquirerName,
+        contactEmail: payload.contactEmail || null,
+        contactPhone: payload.contactPhone || null,
+        eventType: payload.eventType,
+        status: payload.status,
+        message: payload.message,
+        receivedAt: new Date().toISOString(),
+      };
+
+      if (isDemo) {
+        setDashboard((current) => {
+          const inquiries = [newInquiry, ...asArray(current?.inquiries)];
+          const summary = {
+            ...asRecord(current?.summary),
+            new_inquiry_count: inquiries.filter(
+              (item) => (item.status as string) === "new",
+            ).length,
+          };
+          return { ...(current ?? {}), inquiries, summary };
+        });
+        return;
+      }
+
+      await readJsonResponse<Record<string, unknown>>(
+        await authorizedFetch("/inquiries", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "Idempotency-Key": requestKey(),
+          },
+          body: JSON.stringify(newInquiry),
+        }),
+        "Could not create inquiry.",
+      );
+      await loadDashboard();
+    },
+    [authorizedFetch, isDemo, loadDashboard],
+  );
+
+  const createSession = useCallback(
+    async (payload: CreateSessionPayload) => {
+      const newSession = {
+        id: `sess_${Date.now()}`,
+        title: payload.title,
+        sessionType: payload.sessionType,
+        locationName: payload.locationName || null,
+        clientName: payload.clientName || null,
+        scheduledStart: payload.scheduledStart,
+        scheduledEnd: payload.scheduledEnd,
+        status: payload.status,
+      };
+
+      if (isDemo) {
+        setDashboard((current) => {
+          const sessions = [newSession, ...asArray(current?.sessions)];
+          const summaryRecord = asRecord(current?.summary);
+          const upcomingSrc = asArray(summaryRecord.upcoming_sessions);
+          const startMs = new Date(payload.scheduledStart).getTime();
+          const inWindow =
+            Number.isFinite(startMs) &&
+            startMs >= Date.now() &&
+            startMs <= Date.now() + DASHBOARD_WINDOW_MS;
+          const upcoming = inWindow
+            ? ([...upcomingSrc, newSession] as LooseRecord[]).sort((a, b) => {
+                const left = new Date(
+                  String(a.scheduledStart ?? a.scheduled_start ?? ""),
+                ).getTime();
+                const right = new Date(
+                  String(b.scheduledStart ?? b.scheduled_start ?? ""),
+                ).getTime();
+                return left - right;
+              })
+            : upcomingSrc;
+          const summary = {
+            ...summaryRecord,
+            upcoming_sessions: upcoming,
+            active_session_count: upcoming.length,
+          };
+          return { ...(current ?? {}), sessions, summary };
+        });
+        return;
+      }
+
+      await readJsonResponse<Record<string, unknown>>(
+        await authorizedFetch("/sessions", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "Idempotency-Key": requestKey(),
+          },
+          body: JSON.stringify(newSession),
+        }),
+        "Could not create session.",
+      );
+      await loadDashboard();
+    },
+    [authorizedFetch, isDemo, loadDashboard],
+  );
+
+  const createInvoice = useCallback(
+    async (payload: CreateInvoicePayload) => {
+      const newInvoice = {
+        id: `inv_${Date.now()}`,
+        clientName: payload.clientName,
+        sourceType: payload.sourceType,
+        status: payload.status,
+        totalCents: payload.totalCents,
+        balanceCents:
+          payload.status === "paid" ? 0 : payload.totalCents,
+        issuedAt: new Date().toISOString(),
+        dueAt: payload.dueAt,
+      };
+
+      if (isDemo) {
+        setDashboard((current) => {
+          const invoices = [newInvoice, ...asArray(current?.invoices)];
+          const outstandingCents = invoices.reduce(
+            (sum, inv) => sum + Number((inv as LooseRecord).balanceCents ?? 0),
+            0,
+          );
+          const revenueRecord = asRecord(current?.revenue);
+          const totalsRecord = asRecord(revenueRecord.totals);
+          const revenue = {
+            ...revenueRecord,
+            totals: { ...totalsRecord, outstandingCents },
+          };
+          const summary = {
+            ...asRecord(current?.summary),
+            outstanding_invoice_cents: outstandingCents,
+          };
+          return { ...(current ?? {}), invoices, revenue, summary };
+        });
+        return;
+      }
+
+      await readJsonResponse<Record<string, unknown>>(
+        await authorizedFetch("/invoices", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "Idempotency-Key": requestKey(),
+          },
+          body: JSON.stringify(newInvoice),
+        }),
+        "Could not create invoice.",
+      );
+      await loadDashboard();
+    },
+    [authorizedFetch, isDemo, loadDashboard],
+  );
+
+  const createTask = useCallback(
+    async (payload: CreateTaskPayload) => {
+      const newTask = {
+        id: `tk_${Date.now()}`,
+        title: payload.title,
+        priority: payload.priority,
+        status: payload.status,
+        dueAt: payload.dueAt,
+      };
+
+      if (isDemo) {
+        setDashboard((current) => {
+          const tasks = [newTask, ...asArray(current?.tasks)];
+          const summary = {
+            ...asRecord(current?.summary),
+            open_task_count: tasks.filter(
+              (task) => (task.status as string) !== "completed",
+            ).length,
+          };
+          return { ...(current ?? {}), tasks, summary };
+        });
+        return;
+      }
+
+      await readJsonResponse<Record<string, unknown>>(
+        await authorizedFetch("/tasks", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "Idempotency-Key": requestKey(),
+          },
+          body: JSON.stringify(newTask),
+        }),
+        "Could not create task.",
+      );
+      await loadDashboard();
+    },
+    [authorizedFetch, isDemo, loadDashboard],
+  );
+
   const kpis = useMemo(() => {
     const newInquiries = Number(
       asRecord(dashboard?.summary).new_inquiry_count ??
@@ -771,11 +2136,7 @@ export default function StudioOsApp() {
         ).length ??
         0,
     );
-    const activeSessions = Number(
-      asRecord(dashboard?.summary).active_session_count ??
-        asArray(dashboard?.sessions).length ??
-        0,
-    );
+    const activeSessions = upcomingSessions.length;
     const openTasks = Number(
       asRecord(dashboard?.summary).open_task_count ??
         asArray(dashboard?.tasks).filter(
@@ -821,13 +2182,20 @@ export default function StudioOsApp() {
         } open invoices`,
       },
     ];
-  }, [dashboard]);
+  }, [dashboard, upcomingSessions.length]);
+
+  if (status === "booting") {
+    return (
+      <StudioOsLoadingScreen
+        title="Loading Studio OS"
+        description="Restoring your workspace."
+      />
+    );
+  }
 
   if (status !== "authenticated" || !session) {
     return <LoginPanel />;
   }
-
-  const isDemo = Boolean((session as LooseRecord).demoMode);
 
   const topProvider = asRecord(dashboard?.paymentProvider);
   const providerAvailable = Boolean(topProvider.available);
@@ -835,6 +2203,55 @@ export default function StudioOsApp() {
   const overdueInvoices = asArray(dashboard?.invoices).filter(
     (inv) => (inv.status as string) === "overdue",
   ).length;
+
+  const headerActions = (
+    <>
+      {activeEntry.id ? (
+        <button
+          type="button"
+          onClick={() => void stopTimer()}
+          disabled={timerPending}
+          className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+          title="Stop timer"
+        >
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-500" />
+          </span>
+          <span className="font-mono">{duration(activeMinutes)}</span>
+          <span className="hidden max-w-[160px] truncate sm:inline">
+            {String(activeEntry.title)}
+          </span>
+        </button>
+      ) : null}
+
+      <div
+        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500"
+        role="status"
+        aria-label={
+          overdueInvoices > 0
+            ? `${overdueInvoices} overdue invoice alerts`
+            : "No overdue invoice alerts"
+        }
+        title={
+          overdueInvoices > 0
+            ? `${overdueInvoices} overdue invoice alerts`
+            : "No overdue invoice alerts"
+        }
+      >
+        <Icon.Bell />
+        {overdueInvoices > 0 ? (
+          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500" />
+        ) : null}
+      </div>
+
+      {isDemo ? (
+        <span className="hidden items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[0.68rem] font-medium text-amber-800 sm:inline-flex">
+          Demo data
+        </span>
+      ) : null}
+    </>
+  );
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -949,7 +2366,7 @@ export default function StudioOsApp() {
       {/* Main */}
       <div className="lg:pl-60">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur">
-          <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:h-14 sm:flex-nowrap sm:py-0 sm:px-6 lg:px-8">
             <button
               type="button"
               onClick={() => setSidebarOpen((open) => !open)}
@@ -960,8 +2377,11 @@ export default function StudioOsApp() {
                 <path d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
+            <div className="ml-auto flex items-center gap-1.5 sm:hidden">
+              {headerActions}
+            </div>
 
-            <div className="relative w-full max-w-md">
+            <div className="relative order-3 w-full sm:order-none sm:min-w-0 sm:flex-1 sm:max-w-md">
               <div className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-slate-400">
                 <Icon.Search className="h-4 w-4" />
               </div>
@@ -976,13 +2396,11 @@ export default function StudioOsApp() {
                   {searchResults.map((result) => (
                     <a
                       key={`${result.entityType}:${result.entityId}`}
-                      href={
-                        result.entityType === "session"
-                          ? `/session/${result.entityId}/shot-list`
-                          : result.entityType === "studio_booking"
-                            ? `/studio-booking/${result.entityId}/check-in`
-                            : "#pipeline"
-                      }
+                      href={searchResultHref(result)}
+                      onClick={() => {
+                        setSearchInput("");
+                        setSearchResults([]);
+                      }}
                       className="flex items-center justify-between gap-3 px-3 py-2 transition hover:bg-slate-50"
                     >
                       <div className="min-w-0">
@@ -994,7 +2412,7 @@ export default function StudioOsApp() {
                         </p>
                       </div>
                       <span className="text-xs text-slate-400">
-                        {formatStatusLabel(result.entityType as string)}
+                        {humanizeLabel(result.entityType as string)}
                       </span>
                     </a>
                   ))}
@@ -1002,41 +2420,8 @@ export default function StudioOsApp() {
               ) : null}
             </div>
 
-            <div className="ml-auto flex items-center gap-1.5">
-              {activeEntry.id ? (
-                <button
-                  type="button"
-                  onClick={() => void stopTimer()}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-100"
-                  title="Stop timer"
-                >
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-500" />
-                  </span>
-                  <span className="font-mono">{duration(activeMinutes)}</span>
-                  <span className="hidden max-w-[160px] truncate sm:inline">
-                    {String(activeEntry.title)}
-                  </span>
-                </button>
-              ) : null}
-
-              <button
-                type="button"
-                className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-                aria-label="Notifications"
-              >
-                <Icon.Bell />
-                {overdueInvoices > 0 ? (
-                  <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500" />
-                ) : null}
-              </button>
-
-              {isDemo ? (
-                <span className="hidden items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[0.68rem] font-medium text-amber-800 sm:inline-flex">
-                  Demo data
-                </span>
-              ) : null}
+            <div className="hidden sm:ml-auto sm:flex sm:items-center sm:gap-1.5">
+              {headerActions}
             </div>
           </div>
         </header>
@@ -1060,6 +2445,7 @@ export default function StudioOsApp() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => openInquiryModal("new")}
                   className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <Icon.Plus className="h-3 w-3" />
@@ -1067,6 +2453,7 @@ export default function StudioOsApp() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setSessionModalOpen(true)}
                   className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800"
                 >
                   <Icon.Plus className="h-3 w-3" />
@@ -1099,9 +2486,11 @@ export default function StudioOsApp() {
                 </div>
                 <div className="divide-y divide-slate-100 border-t border-slate-100">
                   {upcomingSessions.length === 0 ? (
-                    <div className="px-5 py-6 text-sm text-slate-400">
-                      Nothing scheduled in the next two weeks.
-                    </div>
+                    <EmptyState
+                      variant="row"
+                      headline="No sessions in the next two weeks"
+                      hint="Add one with the Session button above."
+                    />
                   ) : (
                     upcomingSessions.slice(0, 5).map((item: LooseRecord) => {
                       const start = item.scheduledStart ?? item.scheduled_start;
@@ -1169,9 +2558,10 @@ export default function StudioOsApp() {
                     <button
                       type="button"
                       onClick={() => void stopTimer()}
-                      className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                      disabled={timerPending}
+                      className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Stop timer
+                      {timerPending ? "Stopping…" : "Stop timer"}
                     </button>
                   </div>
                 ) : (
@@ -1202,9 +2592,10 @@ export default function StudioOsApp() {
                     <button
                       type="button"
                       onClick={() => void quickStartTimer()}
-                      className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                      disabled={timerPending}
+                      className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Start
+                      {timerPending ? "Starting…" : "Start"}
                     </button>
                   </div>
                 )}
@@ -1243,24 +2634,20 @@ export default function StudioOsApp() {
             <SectionTitle
               title="Pipeline"
               action={
-                <>
-                  <button
-                    type="button"
-                    className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                  >
-                    Filter
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-800"
-                  >
-                    <Icon.Plus className="h-3 w-3" />
-                    Inquiry
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={() => openInquiryModal("new")}
+                  className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-800"
+                >
+                  <Icon.Plus className="h-3 w-3" />
+                  Inquiry
+                </button>
               }
             />
-            <PipelineBoard inquiries={asArray(dashboard?.inquiries)} />
+            <PipelineBoard
+              inquiries={asArray(dashboard?.inquiries)}
+              onAddInquiry={openInquiryModal}
+            />
 
             <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
               <Card padding="p-0">
@@ -1269,9 +2656,11 @@ export default function StudioOsApp() {
                 </div>
                 <div className="divide-y divide-slate-100 border-t border-slate-100">
                   {asArray(dashboard?.smartFiles).slice(0, 6).length === 0 ? (
-                    <div className="px-5 py-6 text-sm text-slate-400">
-                      No smart files in flight.
-                    </div>
+                    <EmptyState
+                      variant="row"
+                      headline="No smart files in flight"
+                      hint="Contracts and questionnaires you send will appear here."
+                    />
                   ) : (
                     asArray(dashboard?.smartFiles)
                       .slice(0, 6)
@@ -1341,6 +2730,7 @@ export default function StudioOsApp() {
               action={
                 <button
                   type="button"
+                  onClick={() => setSessionModalOpen(true)}
                   className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-800"
                 >
                   <Icon.Plus className="h-3 w-3" />
@@ -1365,9 +2755,11 @@ export default function StudioOsApp() {
                     {asArray(dashboard?.sessions).length === 0 ? (
                       <tr>
                         <td colSpan={5}>
-                          <div className="px-5 py-6 text-sm text-slate-400">
-                            No sessions yet.
-                          </div>
+                          <EmptyState
+                            variant="row"
+                            headline="No sessions yet"
+                            hint="Use the Session button above to schedule the first one."
+                          />
                         </td>
                       </tr>
                     ) : (
@@ -1424,7 +2816,8 @@ export default function StudioOsApp() {
                                       String(item.title),
                                     )
                                   }
-                                  className="rounded-md bg-slate-900 px-2 py-1 text-[0.72rem] font-medium text-white transition hover:bg-slate-800"
+                                  disabled={timerPending}
+                                  className="rounded-md bg-slate-900 px-2 py-1 text-[0.72rem] font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                   Timer
                                 </button>
@@ -1630,6 +3023,56 @@ export default function StudioOsApp() {
             </Card>
           </section>
 
+          {/* Galleries */}
+          <section id="galleries" className="scroll-mt-20 space-y-4">
+            <SectionTitle
+              title="Galleries"
+              meta="Delivered, ready to send, and processing."
+            />
+            {asArray(dashboard?.galleries).length === 0 ? (
+              <EmptyState
+                headline="No galleries yet"
+                hint="Galleries appear here once shots upload and finish processing."
+              />
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {asArray(dashboard?.galleries).map((item: LooseRecord) => {
+                  const status = String(item.status ?? "processing");
+                  const photos = Number(item.photoCount ?? 0);
+                  const delivered = item.deliveredAt as string | null;
+                  return (
+                    <div
+                      key={String(item.id)}
+                      className="flex flex-col rounded-xl border border-slate-200 bg-white p-4"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-medium text-slate-900">
+                          {String(item.name)}
+                        </p>
+                        <Chip tone={statusChipTone(status)}>
+                          {formatStatusLabel(status)}
+                        </Chip>
+                      </div>
+                      <div className="mt-3 flex items-end justify-between">
+                        <p className="font-mono text-2xl font-semibold leading-none text-slate-900">
+                          {photos}
+                          <span className="ml-1 text-xs font-normal text-slate-500">
+                            photos
+                          </span>
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {delivered
+                            ? `Delivered ${relative(delivered)}`
+                            : "Awaiting delivery"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
           {/* Finance */}
           <section id="finance" className="scroll-mt-20 space-y-4">
             <SectionTitle title="Finance" />
@@ -1675,6 +3118,7 @@ export default function StudioOsApp() {
                   <SectionTitle title="Invoices" />
                   <button
                     type="button"
+                    onClick={() => setInvoiceModalOpen(true)}
                     className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-800"
                   >
                     <Icon.Plus className="h-3 w-3" />
@@ -1736,8 +3180,8 @@ export default function StudioOsApp() {
                     <p className="mt-0.5 text-lg font-semibold capitalize text-slate-900">
                       {String(topProvider.provider ?? "manual")}
                     </p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      Mode {String(topProvider.mode ?? "test")}
+                    <p className="mt-0.5 text-xs text-slate-500 capitalize">
+                      {String(topProvider.mode ?? "test")} mode
                     </p>
                   </div>
                   <Chip tone={providerAvailable ? "emerald" : "amber"}>
@@ -1839,8 +3283,8 @@ export default function StudioOsApp() {
             </Card>
           </section>
 
-          {/* Operations */}
-          <section id="operations" className="scroll-mt-20 space-y-4">
+          {/* Tasks */}
+          <section id="tasks" className="scroll-mt-20 space-y-4">
             <SectionTitle title="Tasks" />
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -1875,7 +3319,8 @@ export default function StudioOsApp() {
                       </div>
                       <button
                         type="button"
-                        aria-label="Add task"
+                        onClick={() => openTaskModal(state)}
+                        aria-label={`Add ${formatStatusLabel(state)} task`}
                         className="rounded p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
                       >
                         <Icon.Plus className="h-3.5 w-3.5" />
@@ -1883,9 +3328,21 @@ export default function StudioOsApp() {
                     </div>
                     <div className="space-y-2">
                       {rows.length === 0 ? (
-                        <div className="rounded-md border border-dashed border-slate-200 bg-white/60 py-4 text-center text-xs text-slate-400">
-                          —
-                        </div>
+                        <EmptyState
+                          variant="column"
+                          headline={
+                            state === "completed"
+                              ? "Nothing completed yet"
+                              : state === "in_progress"
+                                ? "Nothing in progress"
+                                : "All clear"
+                          }
+                          hint={
+                            state === "completed"
+                              ? "Finished tasks land here."
+                              : "Tap + to add one."
+                          }
+                        />
                       ) : (
                         rows.slice(0, 8).map((item: LooseRecord) => (
                           <div
@@ -1927,8 +3384,12 @@ export default function StudioOsApp() {
             <Card padding="p-0">
               <ul className="divide-y divide-slate-100">
                 {asArray(dashboard?.inbox).length === 0 ? (
-                  <li className="px-5 py-6 text-sm text-slate-400">
-                    Nothing new.
+                  <li>
+                    <EmptyState
+                      variant="row"
+                      headline="Inbox is clear"
+                      hint="Replies, signed contracts, and payments show up here."
+                    />
                   </li>
                 ) : (
                   asArray(dashboard?.inbox).slice(0, 8).map((item: LooseRecord) => (
@@ -1965,6 +3426,29 @@ export default function StudioOsApp() {
           </footer>
         </div>
       </div>
+
+      <InquiryFormModal
+        open={inquiryModalOpen}
+        defaultStatus={inquiryDefaultStage}
+        onClose={() => setInquiryModalOpen(false)}
+        onSubmit={createInquiry}
+      />
+      <SessionFormModal
+        open={sessionModalOpen}
+        onClose={() => setSessionModalOpen(false)}
+        onSubmit={createSession}
+      />
+      <InvoiceFormModal
+        open={invoiceModalOpen}
+        onClose={() => setInvoiceModalOpen(false)}
+        onSubmit={createInvoice}
+      />
+      <TaskFormModal
+        open={taskModalDefaultStatus !== null}
+        defaultStatus={taskModalDefaultStatus ?? "open"}
+        onClose={() => setTaskModalDefaultStatus(null)}
+        onSubmit={createTask}
+      />
     </main>
   );
 }
