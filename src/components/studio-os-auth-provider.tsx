@@ -35,7 +35,7 @@ const sanitizeNextPath = (value: string | null): string | null => {
 };
 
 const redirectToPostAuthDestination = () => {
-  if (typeof window === "undefined" || window.location.pathname !== "/admin") {
+  if (typeof window === "undefined" || window.location.pathname !== "/") {
     return false;
   }
 

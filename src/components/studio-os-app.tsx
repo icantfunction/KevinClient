@@ -346,7 +346,7 @@ function LoginPanel() {
         window.location.replace(nextPath);
         return;
       }
-      window.location.replace("/admin?demo=1");
+      window.location.replace("/?demo=1");
     }
   };
 
