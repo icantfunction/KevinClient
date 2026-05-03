@@ -132,7 +132,7 @@ function BookingCheckInScreen() {
   if (status !== "authenticated") {
     return (
       <StudioOsAuthRequiredScreen
-        href={`/?next=${encodeURIComponent(pathname)}`}
+        href={`/admin?next=${encodeURIComponent(pathname)}`}
         title="Sign in to manage this booking"
         description="Studio check-in links require Studio OS authentication."
       />
@@ -144,7 +144,7 @@ function BookingCheckInScreen() {
       <div className="mx-auto max-w-2xl space-y-4 px-4 pt-6">
         <div className="flex items-center justify-between">
           <Link
-            href="/"
+            href="/admin"
             className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-slate-400 transition hover:text-white"
           >
             ← Dashboard

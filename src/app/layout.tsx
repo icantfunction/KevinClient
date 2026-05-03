@@ -18,16 +18,13 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Kevin's Studio OS",
-  description:
-    "Unified operations dashboard for Kevin's photography practice and creator studio.",
-  manifest: "/manifest.webmanifest",
-  applicationName: "Kevin's Studio OS",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Studio OS",
+  title: {
+    default: "Kevin Ramos",
+    template: "%s | Kevin Ramos",
   },
+  description:
+    "Photography, studio rental, and creator operations by Kevin Ramos.",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({

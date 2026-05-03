@@ -1,0 +1,12 @@
+﻿<svg width="1600" height="1000" viewBox="0 0 1600 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffe3ec" />
+      <stop offset="100%" stop-color="#fff7fa" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1000" rx="48" fill="url(#grad)" />
+  <rect x="80" y="80" width="1440" height="840" rx="40" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.4)" />
+  <text x="120" y="180" font-family="Arial, Helvetica, sans-serif" font-size="36" letter-spacing="8" text-transform="uppercase" fill="rgba(20,20,20,0.6)">Podcast Corner</text>
+  <text x="120" y="240" font-family="Arial, Helvetica, sans-serif" font-size="18" letter-spacing="4" fill="rgba(20,20,20,0.5)">Replace with real imagery</text>
+</svg>
