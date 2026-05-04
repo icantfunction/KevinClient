@@ -1,5 +1,5 @@
 // Stage 10 Service Worker Purpose
-const CACHE_NAME = "studio-os-shell-v2";
+const CACHE_NAME = "studio-os-shell-v3";
 const STATIC_ROUTES = [
   "/",
   "/studio",
