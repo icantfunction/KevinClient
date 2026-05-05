@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Bodoni_Moda, Manrope } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/smooth-scroll";
+import SiteNav from "@/components/site-nav";
+import SiteFooter from "@/components/site-footer";
+import { siteConfig } from "@/lib/site-config";
 
 const bodoni = Bodoni_Moda({
   subsets: ["latin"],
@@ -18,9 +21,11 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "World Wide Events | Minimalist Editorial Photography",
-  description:
-    "World Wide Events crafts minimalist editorial photography for weddings, celebrations, and destination events worldwide.",
+  title: {
+    default: `${siteConfig.name} — Editorial Wedding Photography`,
+    template: `%s — ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
 };
 
 export default function RootLayout({
@@ -32,7 +37,9 @@ export default function RootLayout({
     <html lang="en" className={`${manrope.variable} ${bodoni.variable}`}>
       <body className="antialiased">
         <SmoothScroll />
+        <SiteNav />
         {children}
+        <SiteFooter />
       </body>
     </html>
   );
